@@ -1,41 +1,46 @@
-const transactions = [
-  {
-    id: 1001,
-    type: "Deposit",
-    amount: "$500",
-    status: "Completed",
-  },
-  {
-    id: 1002,
-    type: "Transfer",
-    amount: "$250",
-    status: "Pending",
-  },
-  {
-    id: 1003,
-    type: "Withdraw",
-    amount: "$150",
-    status: "Completed",
-  },
-];
+import React from "react";
 
-export default function TransactionTable() {
+export default function TransactionTable({ transactions = [] }) {
+  const getStatusColor = (status) => {
+    switch ((status || "").toLowerCase()) {
+      case "completed":
+        return "bg-green-500/20 text-green-400";
+
+      case "pending":
+        return "bg-yellow-500/20 text-yellow-400";
+
+      case "failed":
+        return "bg-red-500/20 text-red-400";
+
+      default:
+        return "bg-zinc-700 text-zinc-300";
+    }
+  };
+
+  if (!transactions.length) {
+    return (
+      <div className="py-16 text-center text-zinc-500">
+        No Transactions Available
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-[#141414]">
 
       <table className="w-full">
 
-        <thead className="bg-slate-900 text-white">
+        <thead className="border-b border-zinc-800 bg-[#1b1b1b]">
 
-          <tr>
+          <tr className="text-left text-zinc-400">
 
-            <th className="p-4">ID</th>
+            <th className="px-6 py-4">ID</th>
 
-            <th>Type</th>
+            <th className="px-6 py-4">Type</th>
 
-            <th>Amount</th>
+            <th className="px-6 py-4">Amount</th>
 
-            <th>Status</th>
+            <th className="px-6 py-4">Status</th>
 
           </tr>
 
@@ -43,18 +48,45 @@ export default function TransactionTable() {
 
         <tbody>
 
-          {transactions.map((item) => (
-            <tr key={item.id} className="text-center border-b">
+          {transactions.map((item, index) => (
 
-              <td className="p-4">{item.id}</td>
+            <tr
+              key={item.id || index}
+              className="border-b border-zinc-800 transition hover:bg-zinc-900"
+            >
 
-              <td>{item.type}</td>
+              <td className="px-6 py-5 text-zinc-300">
+                {item.id}
+              </td>
 
-              <td>{item.amount}</td>
+              <td className="px-6 py-5 font-medium text-white">
+                {item.type}
+              </td>
 
-              <td>{item.status}</td>
+              <td
+                className={`px-6 py-5 font-semibold ${
+                  item.type?.toLowerCase() === "deposit"
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                ₹{item.amount}
+              </td>
+
+              <td className="px-6 py-5">
+
+                <span
+                  className={`rounded-full px-4 py-2 text-sm font-medium ${getStatusColor(
+                    item.status
+                  )}`}
+                >
+                  {item.status}
+                </span>
+
+              </td>
 
             </tr>
+
           ))}
 
         </tbody>

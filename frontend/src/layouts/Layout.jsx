@@ -3,16 +3,30 @@ import Navbar from "../components/Navbar/Navbar";
 
 export default function Layout({ children }) {
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden bg-[#050505]">
+
+      {/* Sidebar */}
       <Sidebar />
 
-      <div className="flex-1 bg-gray-100 min-h-screen">
+      {/* Main Content */}
+      <main className="flex flex-1 flex-col overflow-hidden">
+
+        {/* Navbar */}
         <Navbar />
 
-        <div className="p-8">
-          {children}
-        </div>
-      </div>
+        {/* Page Content */}
+        <section className="flex-1 overflow-y-auto bg-[#050505] px-8 py-8">
+
+          <div className="mx-auto w-full max-w-7xl">
+
+            {children}
+
+          </div>
+
+        </section>
+
+      </main>
+
     </div>
   );
 }

@@ -1,5 +1,6 @@
 package com.finpilot.banking.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -26,14 +27,18 @@ public class Account {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "account",
+    @OneToMany(
+            mappedBy = "account",
             cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            orphanRemoval = true
+    )
+    @JsonIgnore
     private List<Transaction> transactions = new ArrayList<>();
 
     public Account() {
@@ -43,7 +48,6 @@ public class Account {
                    BigDecimal balance,
                    String accountType,
                    User user) {
-
         this.accountNumber = accountNumber;
         this.balance = balance;
         this.accountType = accountType;

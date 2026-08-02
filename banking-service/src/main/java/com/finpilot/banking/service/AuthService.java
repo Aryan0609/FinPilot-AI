@@ -106,17 +106,27 @@ public class AuthService {
                 + (100000000 + random.nextInt(900000000));
     }
 
-    public UserResponse getCurrentUser(String token) {
+   public UserResponse getCurrentUser(String token) {
+
+    System.out.println("========== GET CURRENT USER ==========");
+
+    System.out.println("TOKEN: " + token);
 
     token = token.replace("Bearer ", "");
 
     String email = jwtService.extractEmail(token);
 
+    System.out.println("EMAIL: " + email);
+
     User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
+    System.out.println("USER FOUND: " + user.getEmail());
+
     Account account = accountRepository.findByUser(user)
             .orElseThrow(() -> new RuntimeException("Account not found"));
+
+    System.out.println("ACCOUNT FOUND: " + account.getId());
 
     UserResponse response = new UserResponse();
 
@@ -128,6 +138,8 @@ public class AuthService {
     response.setAccountId(account.getId());
     response.setAccountNumber(account.getAccountNumber());
     response.setBalance(account.getBalance());
+
+    System.out.println("RETURNING RESPONSE");
 
     return response;
 }

@@ -30,7 +30,7 @@ public class Transaction {
     @Column(length = 250)
     private String description;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String referenceNumber;
 
     @Column(nullable = false)

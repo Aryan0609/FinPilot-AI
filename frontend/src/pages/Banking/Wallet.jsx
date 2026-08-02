@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import Layout from "../../layouts/Layout";
 import authService from "../../services/authService";
 import { getAccount } from "../../services/bankingService";
@@ -7,8 +8,8 @@ import { getAccount } from "../../services/bankingService";
 export default function Wallet() {
   const navigate = useNavigate();
 
-  const [account, setAccount] = useState(null);
   const [user, setUser] = useState(null);
+  const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,91 +19,187 @@ export default function Wallet() {
   const loadWallet = async () => {
     try {
       const currentUser = (await authService.getCurrentUser()).data;
-
       setUser(currentUser);
 
-      const account = (await getAccount(currentUser.accountId)).data;
-
-    setAccount(account);
-    } catch (error) {
-      console.error(error);
-      alert("Unable to load wallet.");
+      const accountRes = await getAccount(currentUser.accountId);
+      setAccount(accountRes.data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load wallet");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyAccount = async () => {
+    try {
+      await navigator.clipboard.writeText(account?.accountNumber || "");
+      toast.success("Account number copied");
+    } catch {
+      toast.error("Copy failed");
     }
   };
 
   if (loading) {
     return (
       <Layout>
-        <h2 className="text-2xl font-bold">Loading...</h2>
+        <div className="flex h-[70vh] items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-700 border-t-violet-500"></div>
+        </div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <h1 className="text-3xl font-bold mb-8">
-        My Wallet
-      </h1>
+      <div className="space-y-8">
 
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg">
+        <div>
+          <p className="text-sm uppercase tracking-[4px] text-violet-400">
+            Wallet
+          </p>
 
-        <div className="mb-6">
-          <h2 className="text-gray-500">Account Holder</h2>
-          <p className="text-xl font-semibold">
-            {user?.name}
+          <h1 className="mt-2 text-4xl font-black text-white">
+            My Wallet
+          </h1>
+
+          <p className="mt-2 text-zinc-400">
+            Manage your banking account.
           </p>
         </div>
 
-        <div className="mb-6">
-          <h2 className="text-gray-500">Email</h2>
-          <p>{user?.email}</p>
-        </div>
+        <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-8">
 
-        <div className="mb-6">
-          <h2 className="text-gray-500">Phone</h2>
-          <p>{user?.phone}</p>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="text-gray-500">Account Number</h2>
-          <p>{account?.accountNumber}</p>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-gray-500">Current Balance</h2>
-          <p className="text-4xl font-bold text-blue-600">
-            ₹{account?.balance ?? 0}
+          <p className="text-sm text-violet-400">
+            Available Balance
           </p>
+
+          <h2 className="mt-3 text-5xl font-black text-white">
+            ₹{Number(account?.balance || 0).toLocaleString()}
+          </h2>
+
+          <p className="mt-2 text-zinc-500">
+            {account?.accountType}
+          </p>
+
         </div>
 
-        <div className="flex gap-4">
+        <div className="grid gap-5 md:grid-cols-3">
 
           <button
             onClick={() => navigate("/deposit")}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
+            className="rounded-3xl border border-zinc-800 bg-[#141414] p-6 text-left transition hover:border-violet-500"
           >
-            Deposit
+            <div className="text-3xl">📥</div>
+
+            <h3 className="mt-4 text-xl font-bold text-white">
+              Deposit
+            </h3>
+
+            <p className="mt-2 text-sm text-zinc-500">
+              Add money to your account
+            </p>
           </button>
 
           <button
             onClick={() => navigate("/withdraw")}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
+            className="rounded-3xl border border-zinc-800 bg-[#141414] p-6 text-left transition hover:border-violet-500"
           >
-            Withdraw
+            <div className="text-3xl">📤</div>
+
+            <h3 className="mt-4 text-xl font-bold text-white">
+              Withdraw
+            </h3>
+
+            <p className="mt-2 text-sm text-zinc-500">
+              Withdraw available balance
+            </p>
           </button>
 
-          <button
+                    <button
             onClick={() => navigate("/transfer")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+            className="rounded-3xl border border-zinc-800 bg-[#141414] p-6 text-left transition hover:border-violet-500"
           >
-            Transfer
+            <div className="text-3xl">🔄</div>
+
+            <h3 className="mt-4 text-xl font-bold text-white">
+              Transfer
+            </h3>
+
+            <p className="mt-2 text-sm text-zinc-500">
+              Transfer money instantly
+            </p>
           </button>
+
+        </div>
+
+        <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-8">
+
+          <h2 className="mb-6 text-2xl font-bold text-white">
+            Account Details
+          </h2>
+
+          <div className="grid gap-5 md:grid-cols-2">
+
+            <InfoCard
+              title="Account Holder"
+              value={user?.name}
+            />
+
+            <InfoCard
+              title="Email"
+              value={user?.email}
+            />
+
+            <InfoCard
+              title="Phone"
+              value={user?.phone}
+            />
+
+            <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-5">
+
+              <p className="text-sm text-zinc-500">
+                Account Number
+              </p>
+
+              <div className="mt-2 flex items-center justify-between">
+
+                <span className="text-lg font-semibold text-white">
+                  {account?.accountNumber}
+                </span>
+
+                <button
+                  onClick={copyAccount}
+                  className="rounded-lg bg-violet-600 px-3 py-2 text-sm text-white hover:bg-violet-700"
+                >
+                  Copy
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
 
         </div>
 
       </div>
     </Layout>
+  );
+}
+
+function InfoCard({ title, value }) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-5">
+
+      <p className="text-sm text-zinc-500">
+        {title}
+      </p>
+
+      <h3 className="mt-2 text-lg font-semibold text-white">
+        {value || "-"}
+      </h3>
+
+    </div>
   );
 }

@@ -13,7 +13,6 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/transactions")
-
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -26,37 +25,37 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> deposit(
             @RequestBody DepositRequest request) {
 
-        TransactionResponse response = transactionService.deposit(
-                request.getAccountId(),
-                request.getAmount()
+        return ResponseEntity.ok(
+                transactionService.deposit(
+                        request.getAccountId(),
+                        request.getAmount()
+                )
         );
-
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/withdraw")
     public ResponseEntity<TransactionResponse> withdraw(
             @RequestBody WithdrawRequest request) {
 
-        TransactionResponse response = transactionService.withdraw(
-                request.getAccountId(),
-                request.getAmount()
+        return ResponseEntity.ok(
+                transactionService.withdraw(
+                        request.getAccountId(),
+                        request.getAmount()
+                )
         );
-
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/transfer")
     public ResponseEntity<TransactionResponse> transfer(
             @RequestBody TransferRequest request) {
 
-        TransactionResponse response = transactionService.transfer(
-                request.getFromAccountId(),
-                request.getToAccountId(),
-                request.getAmount()
+        return ResponseEntity.ok(
+                transactionService.transfer(
+                        request.getFromAccountId(),
+                        request.getToAccountId(),
+                        request.getAmount()
+                )
         );
-
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/account/{accountId}")
