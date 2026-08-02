@@ -43,4 +43,14 @@ public class TransferRequest {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    @Override
+    public String toString() {
+    return "TransferRequest{" +
+            "fromAccountId=" + fromAccountId +
+            ", toAccountId=" + toAccountId +
+            ", amount=" + amount +
+            ", description='" + description + '\'' +
+            '}';
+}
 }
