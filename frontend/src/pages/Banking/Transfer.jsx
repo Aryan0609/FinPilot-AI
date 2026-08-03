@@ -2,10 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
-<<<<<<< HEAD
-=======
-
->>>>>>> 9198277 (n)
 import {
   FaExchangeAlt,
   FaUser,
@@ -34,20 +30,12 @@ export default function Transfer() {
     e.preventDefault();
 
     if (!receiverId || !amount) {
-<<<<<<< HEAD
       toast.error("Please fill all fields.");
-=======
-      toast.error("Please fill all required fields.");
->>>>>>> 9198277 (n)
       return;
     }
 
     if (Number(amount) <= 0) {
-<<<<<<< HEAD
       toast.error("Please enter a valid amount.");
-=======
-      toast.error("Enter a valid amount.");
->>>>>>> 9198277 (n)
       return;
     }
 
@@ -55,12 +43,8 @@ export default function Transfer() {
 
       setLoading(true);
 
-<<<<<<< HEAD
       const user =
         (await authService.getCurrentUser()).data;
-=======
-      const user = (await authService.getCurrentUser()).data;
->>>>>>> 9198277 (n)
 
       await transferMoney({
         fromAccountId: user.accountId,
@@ -98,7 +82,6 @@ export default function Transfer() {
     <Layout>
 
       <motion.div
-<<<<<<< HEAD
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
@@ -117,28 +100,6 @@ export default function Transfer() {
 
               </div>
 
-=======
-        initial={{ opacity: 0, y: 25 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: .45 }}
-        className="mx-auto max-w-2xl"
-      >
-
-        <div className="overflow-hidden rounded-[32px] border border-zinc-800 bg-gradient-to-br from-[#171717] via-[#101010] to-[#27134a]">
-
-          {/* Header */}
-
-          <div className="border-b border-zinc-800 p-8">
-
-            <div className="flex items-center gap-4">
-
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/20 text-2xl text-violet-400">
-
-                <FaExchangeAlt />
-
-              </div>
-
->>>>>>> 9198277 (n)
               <div>
 
                 <h1 className="text-4xl font-black text-white">
@@ -146,11 +107,7 @@ export default function Transfer() {
                 </h1>
 
                 <p className="mt-2 text-zinc-400">
-<<<<<<< HEAD
                   Transfer funds securely to another account.
-=======
-                  Securely transfer funds to another account.
->>>>>>> 9198277 (n)
                 </p>
 
               </div>
@@ -164,49 +121,29 @@ export default function Transfer() {
             className="space-y-8 p-8"
           >
 
-<<<<<<< HEAD
-=======
-            {/* Receiver */}
-
->>>>>>> 9198277 (n)
             <div>
 
               <label className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-zinc-500">
 
                 <FaUser />
 
-<<<<<<< HEAD
                 Receiver Account ID
-=======
-                Receiver Account
->>>>>>> 9198277 (n)
 
               </label>
 
               <input
                 type="number"
                 value={receiverId}
-<<<<<<< HEAD
                 onChange={(e) =>
                   setReceiverId(e.target.value)
                 }
                 placeholder="Enter Receiver Account ID"
                 className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] p-4 text-white outline-none transition focus:border-violet-500"
-=======
-                onChange={(e) => setReceiverId(e.target.value)}
-                placeholder="Enter Receiver Account ID"
-                className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] px-5 py-4 text-white outline-none transition focus:border-violet-500"
->>>>>>> 9198277 (n)
                 required
               />
 
             </div>
 
-<<<<<<< HEAD
-=======
-            {/* Amount */}
-
->>>>>>> 9198277 (n)
             <div>
 
               <label className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-zinc-500">
@@ -217,7 +154,6 @@ export default function Transfer() {
 
               </label>
 
-<<<<<<< HEAD
               <input
                 type="number"
                 value={amount}
@@ -231,29 +167,6 @@ export default function Transfer() {
 
             </div>
 
-=======
-              <div className="relative">
-
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500 text-xl">
-                  ₹
-                </span>
-
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Enter Amount"
-                  className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] py-4 pl-12 pr-5 text-xl text-white outline-none transition focus:border-violet-500"
-                  required
-                />
-
-              </div>
-
-            </div>
-
-            {/* Quick Amount */}
-
->>>>>>> 9198277 (n)
             <div>
 
               <p className="mb-4 text-sm uppercase tracking-widest text-zinc-500">
@@ -268,11 +181,7 @@ export default function Transfer() {
                     key={value}
                     type="button"
                     onClick={() => setAmount(value)}
-<<<<<<< HEAD
                     className="rounded-2xl border border-zinc-700 bg-[#0d0d0d] py-3 font-semibold text-white transition hover:border-violet-500"
-=======
-                    className="rounded-2xl border border-zinc-700 bg-[#141414] py-3 font-semibold text-white transition hover:border-violet-500 hover:bg-violet-600"
->>>>>>> 9198277 (n)
                   >
                     ₹{value}
                   </button>
@@ -282,14 +191,7 @@ export default function Transfer() {
               </div>
 
             </div>
-<<<<<<< HEAD
                         <div>
-=======
-
-                        {/* Description */}
-
-            <div>
->>>>>>> 9198277 (n)
 
               <label className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-zinc-500">
 
@@ -303,29 +205,17 @@ export default function Transfer() {
                 rows={5}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-<<<<<<< HEAD
                 placeholder="Optional description..."
-=======
-                placeholder="Optional transfer note..."
->>>>>>> 9198277 (n)
                 className="w-full resize-none rounded-2xl border border-zinc-700 bg-[#0d0d0d] p-5 text-white outline-none transition focus:border-violet-500"
               />
 
             </div>
 
-<<<<<<< HEAD
             {/* Transfer Summary */}
 
             <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-6">
 
               <div className="flex items-center gap-3 text-violet-400">
-=======
-            {/* Summary */}
-
-            <div className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-6">
-
-              <div className="flex items-center gap-3 text-violet-300">
->>>>>>> 9198277 (n)
 
                 <FaWallet />
 
@@ -337,7 +227,6 @@ export default function Transfer() {
 
               <div className="mt-6 space-y-4">
 
-<<<<<<< HEAD
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
 
                   <span className="text-zinc-500">
@@ -345,29 +234,14 @@ export default function Transfer() {
                   </span>
 
                   <span className="font-semibold text-white">
-=======
-                <div className="flex items-center justify-between">
-
-                  <span className="text-zinc-400">
-                    Receiver
-                  </span>
-
-                  <span className="font-bold text-white">
->>>>>>> 9198277 (n)
                     {receiverId || "--"}
                   </span>
 
                 </div>
 
-<<<<<<< HEAD
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
 
                   <span className="text-zinc-500">
-=======
-                <div className="flex items-center justify-between">
-
-                  <span className="text-zinc-400">
->>>>>>> 9198277 (n)
                     Amount
                   </span>
 
@@ -377,7 +251,6 @@ export default function Transfer() {
 
                 </div>
 
-<<<<<<< HEAD
                 <div className="flex items-center justify-between">
 
                   <span className="text-zinc-500">
@@ -390,25 +263,14 @@ export default function Transfer() {
 
                 </div>
 
-=======
->>>>>>> 9198277 (n)
               </div>
 
             </div>
 
-<<<<<<< HEAD
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-2xl bg-violet-600 py-4 text-lg font-bold text-white transition-all duration-300 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-=======
-            {/* Submit */}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-4 text-lg font-bold text-white transition-all duration-300 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
->>>>>>> 9198277 (n)
             >
               {loading
                 ? "Processing Transfer..."
