@@ -12,7 +12,6 @@ public class AIService {
 
     private final RestTemplate restTemplate;
 
-<<<<<<< HEAD
     @Value("${ai.service.url:http://ai-service:8000/predict}")
     private String aiUrl;
 
@@ -38,18 +37,4 @@ public class AIService {
 
         return response.getBody();
     }
-=======
-    @Value("${ai.service.url}")
-    private String fastApiUrl;
-    public PredictionResponse predict(PredictionRequest request) {
-
-    System.out.println("TYPE = " + request.getType());
-
-    return restTemplate.postForObject(
-            fastApiUrl,
-            request,
-            PredictionResponse.class
-    );
-}
->>>>>>> 9198277 (n)
 }
