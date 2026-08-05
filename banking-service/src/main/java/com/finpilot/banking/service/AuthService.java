@@ -69,7 +69,7 @@ public class AuthService {
 
         accountRepository.save(account);
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateToken(user);
 
         return new AuthResponse(
                 token,
@@ -90,7 +90,7 @@ public class AuthService {
             throw new RuntimeException("Invalid Password");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateToken(user);
 
         return new AuthResponse(
                 token,
