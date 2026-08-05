@@ -86,6 +86,36 @@ SELECT pg_catalog.setval('public.beneficiaries_beneficiary_id_seq', 10, true);
 
 SELECT pg_catalog.setval('public.transactions_transaction_id_seq', 10, true);
 
+INSERT INTO mutual_funds
+(fund_name, fund_type, nav, risk_level, annual_return, created_at)
+VALUES
+(
+'ICICI Bluechip Fund',
+'Large Cap',
+102.45,
+'Moderate',
+14.20,
+CURRENT_TIMESTAMP
+),
+
+(
+'SBI Small Cap Fund',
+'Small Cap',
+84.30,
+'High',
+18.50,
+CURRENT_TIMESTAMP
+),
+
+(
+'Nippon India Mid Cap Fund',
+'Mid Cap',
+121.75,
+'Moderate',
+16.80,
+CURRENT_TIMESTAMP
+);
+
 
 --
 -- PostgreSQL database dump complete
