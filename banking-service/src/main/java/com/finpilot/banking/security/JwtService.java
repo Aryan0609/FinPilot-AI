@@ -28,7 +28,7 @@ public class JwtService {
 
     public String generateToken(User user) {
 
-        String roles = user.getRoles()
+        var roles = user.getRoles()
                 .stream()
                 .map(Role::getRoleName)
                 .collect(Collectors.joining(","));

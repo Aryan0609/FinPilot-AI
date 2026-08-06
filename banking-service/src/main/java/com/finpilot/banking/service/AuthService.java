@@ -11,6 +11,8 @@ import com.finpilot.banking.repository.UserRepository;
 import com.finpilot.banking.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.finpilot.banking.entity.Role;
+import com.finpilot.banking.repository.RoleRepository;
 
 import java.math.BigDecimal;
 import java.util.Random;
@@ -22,16 +24,19 @@ public class AuthService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RoleRepository roleRepository;
 
     public AuthService(UserRepository userRepository,
                        AccountRepository accountRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       RoleRepository roleRepository) {
 
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.roleRepository = roleRepository;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -49,6 +54,16 @@ public class AuthService {
         user.setPassword(
                 passwordEncoder.encode(request.getPassword())
         );
+
+        Role userRole = roleRepository
+        .findByRoleName("USER")
+        .orElseThrow(() ->
+                new RuntimeException("USER role not found")
+        );
+
+
+        user.getRoles().add(userRole);
+
 
         userRepository.save(user);
 
@@ -90,6 +105,12 @@ public class AuthService {
 
             throw new RuntimeException("Invalid Password");
         }
+
+        System.out.println("USER ROLES:");
+        user.getRoles() 
+            .forEach(role ->
+                System.out.println(role.getRoleName())
+                );
 
         String token = jwtService.generateToken(user);
 

@@ -7,9 +7,17 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import com.finpilot.banking.security.JwtAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
+    
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -17,20 +25,48 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http)
+        throws Exception {
 
-    System.out.println("========== USING MY SECURITY CONFIG ==========");
 
-    http
-        .csrf(csrf -> csrf.disable())
-        .cors(Customizer.withDefaults())
-        .authorizeHttpRequests(auth -> auth
-            .anyRequest().permitAll()
-        )
-        .formLogin(form -> form.disable())
-        .httpBasic(httpBasic -> httpBasic.disable());
+    return http
+            .csrf(csrf -> csrf.disable())
 
-    return http.build();
+            .cors(cors -> {})
+
+            .authorizeHttpRequests(auth -> auth
+
+
+                    .requestMatchers(
+                            "/auth/register",
+                            "/auth/login"
+                    )
+                    .permitAll()
+
+
+                    .requestMatchers("/admin/**")
+                    .hasRole("ADMIN")
+
+
+                    .requestMatchers("/api/**")
+                    .hasAnyRole(
+                            "USER",
+                            "ADMIN"
+                    )
+
+
+                    .anyRequest()
+                    .authenticated()
+            )
+
+
+            .addFilterBefore(
+                    jwtAuthenticationFilter,
+                    UsernamePasswordAuthenticationFilter.class
+            )
+
+
+            .build();
 }
 
     
