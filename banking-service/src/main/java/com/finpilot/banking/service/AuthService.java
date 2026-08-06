@@ -1,5 +1,6 @@
 package com.finpilot.banking.service;
-
+import com.finpilot.banking.entity.Role;
+import java.util.stream.Collectors;
 import com.finpilot.banking.dto.*;
 import com.finpilot.banking.dto.LoginRequest;
 import com.finpilot.banking.dto.RegisterRequest;
@@ -138,6 +139,14 @@ public class AuthService {
     response.setAccountId(account.getId());
     response.setAccountNumber(account.getAccountNumber());
     response.setBalance(account.getBalance());
+    response.setRoles(
+
+        user.getRoles()
+                .stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toSet())
+
+);
 
     System.out.println("RETURNING RESPONSE");
 
