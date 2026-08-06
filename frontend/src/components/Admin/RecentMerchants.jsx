@@ -1,45 +1,60 @@
-const merchants = [
-  { name: "Amazon", status: "Verified" },
-  { name: "Flipkart", status: "Pending" },
-  { name: "Reliance", status: "Verified" },
-];
+import { useEffect, useState } from "react";
+import { getRecentTransactions } from "../../services/adminService";
 
-export default function RecentMerchants() {
-  return (
-    <div className="bg-[#141414] border border-[#2A2A2A] rounded-3xl p-6">
+export default function RecentTransactions() {
 
-      <h2 className="text-xl font-bold text-white mb-6">
-        Recent Merchants
-      </h2>
+    const [transactions, setTransactions] = useState([]);
 
-      <div className="space-y-4">
+    useEffect(() => {
+        loadTransactions();
+    }, []);
 
-        {merchants.map((merchant) => (
+    const loadTransactions = async () => {
 
-          <div
-            key={merchant.name}
-            className="flex justify-between items-center border-b border-[#2A2A2A] pb-4"
-          >
-            <p className="text-white">
-              {merchant.name}
-            </p>
+        const response = await getRecentTransactions();
 
-            <span
-              className={`px-3 py-1 rounded-full text-sm ${
-                merchant.status === "Verified"
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-yellow-500/20 text-yellow-400"
-              }`}
-            >
-              {merchant.status}
-            </span>
+        setTransactions(response.data);
 
-          </div>
+    };
 
-        ))}
+    return (
 
-      </div>
+        <div className="bg-[#141414] border border-[#2A2A2A] rounded-3xl p-6">
 
-    </div>
-  );
+            <h2 className="text-xl font-bold text-white mb-6">
+                Recent Transactions
+            </h2>
+
+            {transactions.map(tx => (
+
+                <div
+                    key={tx.id}
+                    className="flex justify-between border-b border-zinc-800 py-3"
+                >
+
+                    <div>
+
+                        <p className="text-white">
+                            {tx.transactionType}
+                        </p>
+
+                        <p className="text-sm text-zinc-500">
+                            {new Date(tx.transactionDate).toLocaleString()}
+                        </p>
+
+                    </div>
+
+                    <span className="text-green-400">
+
+                        ₹{tx.amount}
+
+                    </span>
+
+                </div>
+
+            ))}
+
+        </div>
+
+    );
 }

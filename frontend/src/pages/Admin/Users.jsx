@@ -1,54 +1,92 @@
+import { useEffect, useState } from "react";
+import { getUsers } from "../../services/adminService";
 import AdminLayout from "../../layouts/AdminLayout";
-import UserTable from "../../components/Admin/UserTable";
-import { FaUsers } from "react-icons/fa";
 
 export default function Users() {
+
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const response = await getUsers();
+      setUsers(response.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <h1 className="text-white text-2xl">Loading Users...</h1>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
 
-      <div className="space-y-8">
+      <h1 className="text-3xl font-bold text-white mb-8">
+        Users
+      </h1>
 
-        {/* Header */}
+      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
 
-        <div className="flex justify-between items-center">
+        <table className="w-full text-white">
 
-          <div>
+          <thead className="bg-zinc-800">
 
-            <h1 className="text-4xl font-bold text-white">
-              Users
-            </h1>
+            <tr>
 
-            <p className="text-[#8E8E93] mt-2">
-              Manage registered users.
-            </p>
+              <th className="p-4 text-left">ID</th>
 
-          </div>
+              <th className="p-4 text-left">Name</th>
 
-          <button className="bg-[#7C5CFF] hover:bg-[#A78BFA] px-6 py-3 rounded-2xl flex items-center gap-3 transition">
+              <th className="p-4 text-left">Email</th>
 
-            <FaUsers />
+              <th className="p-4 text-left">Phone</th>
 
-            Add User
+              <th className="p-4 text-left">Role</th>
 
-          </button>
+            </tr>
 
-        </div>
+          </thead>
 
-        {/* Search */}
+          <tbody>
 
-        <div>
+            {users.map((user) => (
 
-          <input
-            type="text"
-            placeholder="Search user..."
-            className="w-full bg-[#141414] border border-[#2A2A2A] rounded-2xl px-5 py-4 text-white placeholder:text-[#6B7280] focus:outline-none focus:border-[#7C5CFF]"
-          />
+              <tr
+                key={user.id}
+                className="border-t border-zinc-800 hover:bg-zinc-800"
+              >
 
-        </div>
+                <td className="p-4">{user.id}</td>
 
-        {/* Table */}
+                <td className="p-4">{user.name}</td>
 
-        <UserTable />
+                <td className="p-4">{user.email}</td>
+
+                <td className="p-4">{user.phone}</td>
+
+                <td className="p-4">
+                  {user.roles.join(", ")}
+                </td>
+
+              </tr>
+
+            ))}
+
+          </tbody>
+
+        </table>
 
       </div>
 
