@@ -18,6 +18,19 @@ export const API = {
 
   HISTORY: (id) => `/api/transactions/account/${id}`,
 
+  // ---------------- Mutual Funds ----------------
+
+  MUTUAL_FUNDS: "/api/mutual-funds",
+
+  BUY_FUND: (accountId) =>
+      `/api/mutual-funds/buy/${accountId}`,
+
+  SELL_FUND: (investmentId) =>
+      `/api/mutual-funds/sell/${investmentId}`,
+
+  PORTFOLIO: (accountId) =>
+      `/api/mutual-funds/portfolio/${accountId}`,
+
   AI_PREDICT: "/predict"
 
 };
