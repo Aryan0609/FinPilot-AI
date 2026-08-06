@@ -16,8 +16,8 @@ public class AIService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${ai.service.url}")
-    private String aiServiceUrl;
+    @Value("${ai.service.url:http://ai-service:8000/predict}")
+    private String aiUrl;
 
     public AIService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
