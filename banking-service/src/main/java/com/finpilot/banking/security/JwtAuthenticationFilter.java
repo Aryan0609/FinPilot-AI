@@ -84,13 +84,10 @@ public class JwtAuthenticationFilter
 
 
             var authorities =
-                    Arrays.stream(roles.split(","))
-                    .map(role ->
-                         new SimpleGrantedAuthority(
-                         "ROLE_"+role
-                         ))
-                    .toList();
-
+        Arrays.stream(roles.split(","))
+        .map(String::trim)
+        .map(SimpleGrantedAuthority::new)
+        .toList();
 
 
             UsernamePasswordAuthenticationToken authentication =

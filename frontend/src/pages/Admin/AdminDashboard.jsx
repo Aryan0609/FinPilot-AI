@@ -14,7 +14,7 @@ import AdminLayout from "../../layouts/AdminLayout";
 import StatsCard from "../../components/Admin/StatsCard";
 import TransactionChart from "../../components/Admin/TransactionChart";
 import RecentUsers from "../../components/Admin/RecentUsers";
-import RecentMerchants from "../../components/Admin/RecentMerchants";
+import RecentTransactions from "../../components/Admin/RecentTransactions";
 
 export default function AdminDashboard() {
 
@@ -107,13 +107,13 @@ export default function AdminDashboard() {
 
         <TransactionChart />
 
-        <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-2">
 
-          <RecentUsers />
+  <RecentUsers />
 
-          <RecentMerchants />
+  <RecentTransactions />
 
-        </div>
+</div>
 
       </div>
 
