@@ -33,7 +33,7 @@ public class AIService {
 
         ResponseEntity<PredictionResponse> response =
                 restTemplate.exchange(
-                        aiServiceUrl,
+                        aiUrl,
                         HttpMethod.POST,
                         entity,
                         PredictionResponse.class

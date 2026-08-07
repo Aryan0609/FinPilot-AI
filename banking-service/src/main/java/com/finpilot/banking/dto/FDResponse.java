@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 public class FDResponse {
 
-    private Long fdId;
+    private Long id;
 
     private BigDecimal principalAmount;
 
@@ -24,8 +24,8 @@ public class FDResponse {
     public FDResponse() {
     }
 
-    public Long getFdId() {
-        return fdId;
+    public Long getId() {
+        return id;
     }
 
     public BigDecimal getPrincipalAmount() {
@@ -56,8 +56,8 @@ public class FDResponse {
         return status;
     }
 
-    public void setFdId(Long fdId) {
-        this.fdId = fdId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setPrincipalAmount(BigDecimal principalAmount) {

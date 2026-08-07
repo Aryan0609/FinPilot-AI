@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import com.finpilot.banking.security.JwtAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+
 
 @Configuration
 public class SecurityConfig {
@@ -24,29 +26,28 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http)
+        @Bean
+        SecurityFilterChain securityFilterChain(HttpSecurity http)
         throws Exception {
-
 
     return http
             .csrf(csrf -> csrf.disable())
 
-            .cors(cors -> {})
+            .cors(Customizer.withDefaults())
+
+            .sessionManagement(session ->
+                    session.sessionCreationPolicy(
+                            SessionCreationPolicy.STATELESS
+                    )
+            )
 
             .authorizeHttpRequests(auth -> auth
 
-
-                    .requestMatchers(
-                            "/auth/register",
-                            "/auth/login"
-                    )
+                    .requestMatchers("/auth/**")
                     .permitAll()
-
 
                     .requestMatchers("/admin/**")
                     .hasRole("ADMIN")
-
 
                     .requestMatchers("/api/**")
                     .hasAnyRole(
@@ -54,17 +55,14 @@ public class SecurityConfig {
                             "ADMIN"
                     )
 
-
                     .anyRequest()
                     .authenticated()
             )
-
 
             .addFilterBefore(
                     jwtAuthenticationFilter,
                     UsernamePasswordAuthenticationFilter.class
             )
-
 
             .build();
 }
