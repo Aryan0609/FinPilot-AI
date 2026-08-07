@@ -16,11 +16,14 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
+<<<<<<< HEAD
 public class FixedDepositServiceImpl
         implements FixedDepositService {
+=======
+public class FixedDepositServiceImpl implements FixedDepositService {
+>>>>>>> 820f7a4 (admindashboard)
 
     private final FixedDepositRepository fixedDepositRepository;
-
     private final AccountRepository accountRepository;
 
     public FixedDepositServiceImpl(
@@ -38,10 +41,16 @@ public class FixedDepositServiceImpl
             BigDecimal amount,
             Integer tenureMonths) {
 
+<<<<<<< HEAD
         Account account =
                 accountRepository.findById(accountId)
                         .orElseThrow(() ->
                                 new RuntimeException("Account not found"));
+=======
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found"));
+>>>>>>> 820f7a4 (admindashboard)
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Invalid FD amount");
@@ -57,6 +66,7 @@ public class FixedDepositServiceImpl
 
         double interestRate = 7.0;
 
+<<<<<<< HEAD
         BigDecimal interest =
                 amount
                         .multiply(BigDecimal.valueOf(interestRate))
@@ -69,6 +79,14 @@ public class FixedDepositServiceImpl
 
         BigDecimal maturityAmount =
                 amount.add(interest);
+=======
+        BigDecimal interest = amount
+                .multiply(BigDecimal.valueOf(interestRate))
+                .multiply(BigDecimal.valueOf(tenureMonths))
+                .divide(BigDecimal.valueOf(1200), 2, RoundingMode.HALF_UP);
+
+        BigDecimal maturityAmount = amount.add(interest);
+>>>>>>> 820f7a4 (admindashboard)
 
         account.setBalance(
                 account.getBalance().subtract(amount)
@@ -84,9 +102,13 @@ public class FixedDepositServiceImpl
         fd.setTenureMonths(tenureMonths);
         fd.setMaturityAmount(maturityAmount);
         fd.setStartDate(LocalDate.now());
+<<<<<<< HEAD
         fd.setMaturityDate(
                 LocalDate.now().plusMonths(tenureMonths)
         );
+=======
+        fd.setMaturityDate(LocalDate.now().plusMonths(tenureMonths));
+>>>>>>> 820f7a4 (admindashboard)
         fd.setStatus(FDStatus.ACTIVE);
 
         FixedDeposit savedFD =
@@ -99,8 +121,12 @@ public class FixedDepositServiceImpl
     @Transactional(readOnly = true)
     public List<FDResponse> getUserFDs(Long userId) {
 
+<<<<<<< HEAD
         return fixedDepositRepository
                 .findByUserId(userId)
+=======
+        return fixedDepositRepository.findByUserId(userId)
+>>>>>>> 820f7a4 (admindashboard)
                 .stream()
                 .map(this::map)
                 .toList();
@@ -116,9 +142,13 @@ public class FixedDepositServiceImpl
                                 new RuntimeException("FD not found"));
 
         if (fd.getStatus() != FDStatus.ACTIVE) {
+<<<<<<< HEAD
             throw new RuntimeException(
                     "FD is already closed"
             );
+=======
+            throw new RuntimeException("FD is already closed");
+>>>>>>> 820f7a4 (admindashboard)
         }
 
         Account account =
@@ -145,6 +175,7 @@ public class FixedDepositServiceImpl
 
         FDResponse response = new FDResponse();
 
+<<<<<<< HEAD
         response.setId(fd.getId());
 
         response.setPrincipalAmount(
@@ -174,6 +205,23 @@ public class FixedDepositServiceImpl
         response.setStatus(
                 fd.getStatus().name()
         );
+=======
+        response.setFdId(fd.getId());
+
+        response.setPrincipalAmount(fd.getPrincipalAmount());
+
+        response.setInterestRate(fd.getInterestRate());
+
+        response.setTenureMonths(fd.getTenureMonths());
+
+        response.setMaturityAmount(fd.getMaturityAmount());
+
+        response.setStartDate(fd.getStartDate());
+
+        response.setMaturityDate(fd.getMaturityDate());
+
+        response.setStatus(fd.getStatus().name());
+>>>>>>> 820f7a4 (admindashboard)
 
         return response;
     }

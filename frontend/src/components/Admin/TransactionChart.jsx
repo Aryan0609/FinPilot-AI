@@ -1,31 +1,79 @@
+import {
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
+
+import { useEffect, useState } from "react";
+import { getChartData } from "../../services/adminService";
+
 export default function TransactionChart() {
+
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    loadChart();
+  }, []);
+
+  const loadChart = async () => {
+
+    try {
+
+      const response = await getChartData();
+
+      setData(response.data);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
   return (
+
     <div className="bg-[#141414] border border-[#2A2A2A] rounded-3xl p-8">
 
       <h2 className="text-2xl font-bold text-white">
-        Monthly Transaction Overview
+
+        Last 7 Days Transactions
+
       </h2>
 
-      <p className="text-[#8E8E93] mt-2">
-        Transaction Analytics
-      </p>
+      <div className="h-80 mt-8">
 
-      <div className="h-80 mt-8 rounded-2xl border border-dashed border-[#2A2A2A] flex items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
 
-        <div className="text-center">
+          <LineChart data={data}>
 
-          <div className="text-7xl">
-            📈
-          </div>
+            <CartesianGrid stroke="#333" />
 
-          <p className="mt-5 text-[#8E8E93]">
-            Transaction Chart
-          </p>
+            <XAxis dataKey="label" />
 
-        </div>
+            <YAxis />
+
+            <Tooltip />
+
+            <Line
+              type="monotone"
+              dataKey="transactions"
+              stroke="#7C5CFF"
+              strokeWidth={3}
+            />
+
+          </LineChart>
+
+        </ResponsiveContainer>
 
       </div>
 
     </div>
+
   );
+
 }

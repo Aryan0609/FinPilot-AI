@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  FaUsers,
   FaSearch,
   FaUserShield,
-  FaUser
+  FaUser,
+  FaEye,
 } from "react-icons/fa";
 
-import { getUsers } from "../../services/adminService";
+import {
+  getUsers,
+  getUserDetails,
+} from "../../services/adminService";
+
 import AdminLayout from "../../layouts/AdminLayout";
+import UserDetailsModal from "../../components/Admin/UserDetailsModal";
 
 export default function Users() {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -34,6 +42,24 @@ export default function Users() {
     } finally {
 
       setLoading(false);
+
+    }
+
+  };
+
+  const openUser = async (id) => {
+
+    try {
+
+      const response = await getUserDetails(id);
+
+      setSelectedUser(response.data);
+
+      setModalOpen(true);
+
+    } catch (err) {
+
+      console.error(err);
 
     }
 
@@ -83,8 +109,6 @@ export default function Users() {
 
       <div className="space-y-8">
 
-        {/* Header */}
-
         <div className="flex items-center justify-between">
 
           <div>
@@ -121,8 +145,6 @@ export default function Users() {
 
         </div>
 
-        {/* Search */}
-
         <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4">
 
           <FaSearch className="text-zinc-500" />
@@ -136,8 +158,6 @@ export default function Users() {
           />
 
         </div>
-
-        {/* Table */}
 
         <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl">
 
@@ -157,6 +177,12 @@ export default function Users() {
 
                 <th className="p-5 text-left text-zinc-300">Role</th>
 
+                <th className="p-5 text-center text-zinc-300">
+
+                  Actions
+
+                </th>
+
               </tr>
 
             </thead>
@@ -168,7 +194,7 @@ export default function Users() {
                 <tr>
 
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     className="py-12 text-center text-zinc-500"
                   >
 
@@ -237,6 +263,19 @@ export default function Users() {
 
                     </td>
 
+                    <td className="p-5 text-center">
+
+                      <button
+                        onClick={() => openUser(user.id)}
+                        className="rounded-xl bg-violet-600 p-3 transition hover:bg-violet-700"
+                      >
+
+                        <FaEye className="text-white" />
+
+                      </button>
+
+                    </td>
+
                   </tr>
 
                 ))
@@ -250,6 +289,12 @@ export default function Users() {
         </div>
 
       </div>
+
+      <UserDetailsModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        user={selectedUser}
+      />
 
     </AdminLayout>
 

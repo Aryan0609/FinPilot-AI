@@ -28,30 +28,23 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-72 bg-[#090909] border-r border-[#2A2A2A] flex flex-col text-white">
+    <aside className="flex h-screen w-72 flex-col border-r border-[#2A2A2A] bg-[#111111] text-white">
 
       {/* Logo */}
-      <div className="px-8 py-8 border-b border-[#2A2A2A]">
-
-        <h1 className="text-3xl font-black">
-          FinPilot AI
-        </h1>
-
+      <div className="border-b border-[#2A2A2A] px-8 py-8">
+        <h1 className="text-3xl font-black">FinPilot AI</h1>
         <p className="mt-2 text-sm text-[#8E8E93]">
           Admin Dashboard
         </p>
-
       </div>
 
       {/* Navigation */}
       <div className="flex-1 p-4">
-
-        <p className="px-4 mb-4 text-xs uppercase tracking-[4px] text-[#6B7280]">
+        <p className="mb-4 px-4 text-xs uppercase tracking-[4px] text-[#6B7280]">
           Navigation
         </p>
 
         <div className="space-y-2">
-
           {menu.map((item) => {
             const Icon = item.icon;
 
@@ -59,7 +52,7 @@ export default function Sidebar() {
               <NavLink key={item.name} to={item.path}>
                 {({ isActive }) => (
                   <div
-                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 cursor-pointer ${
+                    className={`flex cursor-pointer items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-300 ${
                       isActive
                         ? "bg-[#7C5CFF] text-white"
                         : "hover:bg-[#1A1A1A]"
@@ -72,22 +65,18 @@ export default function Sidebar() {
               </NavLink>
             );
           })}
-
         </div>
-
       </div>
 
       {/* Logout */}
-      <div className="p-5 border-t border-[#2A2A2A]">
-
+      <div className="border-t border-[#2A2A2A] p-5">
         <button
           onClick={logout}
-          className="w-full bg-red-600 hover:bg-red-500 rounded-2xl py-4 flex justify-center items-center gap-3 transition"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-red-600 py-4 transition hover:bg-red-500"
         >
           <FaSignOutAlt />
           Logout
         </button>
-
       </div>
 
     </aside>

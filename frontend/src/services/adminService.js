@@ -4,25 +4,58 @@ const adminService = {
 
   getDashboardStats() {
     return api.get("/admin/dashboard");
-  },
-
-  getUsers() {
-    return api.get("/admin/users");
-  },
-
-  getRecentUsers() {
-    return api.get("/admin/users/recent");
-  },
-
-  getRecentTransactions() {
-    return api.get("/admin/transactions/recent");
   }
 
 };
 
 export default adminService;
 
-export const getDashboardStats = adminService.getDashboardStats;
-export const getUsers = adminService.getUsers;
-export const getRecentUsers = adminService.getRecentUsers;
-export const getRecentTransactions = adminService.getRecentTransactions;
+// ================= DASHBOARD =================
+
+export const getDashboardStats = () => {
+  return api.get("/admin/dashboard");
+};
+
+export const getChartData = () => {
+  return api.get("/admin/dashboard/chart");
+};
+
+// ================= USERS =================
+
+export const getUsers = () => {
+  return api.get("/admin/users");
+};
+
+export const getRecentUsers = () => {
+  return api.get("/admin/users/recent");
+};
+
+export const getUserDetails = (id) => {
+  return api.get(`/admin/users/${id}`);
+};
+
+// ================= TRANSACTIONS =================
+
+export const getTransactions = () => {
+  return api.get("/admin/transactions");
+};
+
+export const getRecentTransactions = () => {
+  return api.get("/admin/transactions/recent");
+};
+
+// ================= NOTIFICATIONS =================
+
+export const getNotifications = () => {
+  return api.get("/admin/notifications");
+};
+
+// ================= AI =================
+
+export const getAIHealth = () => {
+  return api.get("/ai/health");
+};
+
+export const getUserTransactions = (id) => {
+    return api.get(`/admin/users/${id}/transactions`);
+};

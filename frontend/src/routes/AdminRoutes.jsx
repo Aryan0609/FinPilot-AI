@@ -11,21 +11,43 @@ import Profile from "../pages/Admin/Profile";
 export default function AdminRoutes() {
 
   return (
+
     <Routes>
 
-      <Route index element={<AdminDashboard />} />
+      <Route
+        index
+        element={<AdminDashboard />}
+      />
 
-      <Route path="users" element={<Users />} />
+      <Route
+        path="users"
+        element={<Users />}
+      />
 
-      <Route path="merchants" element={<Merchants />} />
+      <Route
+        path="merchants"
+        element={<Merchants />}
+      />
 
-      <Route path="transactions" element={<Transactions />} />
+      <Route
+        path="transactions"
+        element={<Transactions />}
+      />
 
-      <Route path="fraud" element={<FraudDetection />} />
+      <Route
+        path="fraud"
+        element={<FraudDetection />}
+      />
 
-      <Route path="notifications" element={<Notifications />} />
+      <Route
+        path="notifications"
+        element={<Notifications />}
+      />
 
-      <Route path="profile" element={<Profile />} />
+      <Route
+        path="profile"
+        element={<Profile />}
+      />
 
       <Route
         path="*"
@@ -33,6 +55,7 @@ export default function AdminRoutes() {
       />
 
     </Routes>
+
   );
 
 }

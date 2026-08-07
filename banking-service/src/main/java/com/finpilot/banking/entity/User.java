@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -31,25 +31,35 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "user",
+    @Column(nullable = false)
+    private String status = "ACTIVE";
+
+    @OneToMany(
+            mappedBy = "user",
             cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            orphanRemoval = true
+    )
     private List<Account> accounts = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-)
-private Set<Role> roles = new HashSet<>();
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     public User() {
     }
 
     @PrePersist
     public void prePersist() {
+
         this.createdAt = LocalDateTime.now();
+
+        if (this.status == null) {
+            this.status = "ACTIVE";
+        }
     }
 
     public Long getId() {
@@ -76,8 +86,16 @@ private Set<Role> roles = new HashSet<>();
         return createdAt;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public List<Account> getAccounts() {
         return accounts;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
     }
 
     public void setId(Long id) {
@@ -104,15 +122,15 @@ private Set<Role> roles = new HashSet<>();
         this.createdAt = createdAt;
     }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public void setAccounts(List<Account> accounts) {
         this.accounts = accounts;
     }
 
-    public Set<Role> getRoles() {
-    return roles;
-}
-
-public void setRoles(Set<Role> roles) {
-    this.roles = roles;
-}
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
 }
