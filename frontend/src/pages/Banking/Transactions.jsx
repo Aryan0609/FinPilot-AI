@@ -1,369 +1,200 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FaHistory,
-  FaSearch,
   FaArrowDown,
   FaArrowUp,
   FaExchangeAlt,
+  FaSearch,
 } from "react-icons/fa";
+import { toast } from "react-hot-toast";
 
 import Layout from "../../layouts/Layout";
-import authService from "../../services/authService";
 import { getTransactions } from "../../services/bankingService";
+import authService from "../../services/authService";
 
 export default function Transactions() {
-
   const [transactions, setTransactions] = useState([]);
   const [filtered, setFiltered] = useState([]);
-
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("ALL");
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     loadTransactions();
-
   }, []);
 
+  useEffect(() => {
+    const term = search.toLowerCase();
+
+    setFiltered(
+      transactions.filter((tx) =>
+        JSON.stringify(tx).toLowerCase().includes(term)
+      )
+    );
+  }, [search, transactions]);
+
   const loadTransactions = async () => {
-
     try {
+      const user = (await authService.getCurrentUser()).data;
 
-      const user =
-        (await authService.getCurrentUser()).data;
+      const res = await getTransactions(user.accountId);
 
-      const res =
-        await getTransactions(user.accountId);
-
-      const data = res.data || [];
-
-      setTransactions(data);
-      setFiltered(data);
-
+      setTransactions(res.data || []);
+      setFiltered(res.data || []);
     } catch (err) {
-
-      console.error(err);
-
+      toast.error("Unable to load transactions.");
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
-  useEffect(() => {
+  const getIcon = (type) => {
+    switch (type?.toUpperCase()) {
+      case "DEPOSIT":
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20 text-green-400">
+            <FaArrowDown />
+          </div>
+        );
 
-    let data = [...transactions];
+      case "WITHDRAW":
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/20 text-red-400">
+            <FaArrowUp />
+          </div>
+        );
 
-    if (filter !== "ALL") {
-
-      data = data.filter(
-        t =>
-          t.type?.toUpperCase() === filter
-      );
-
+      default:
+        return (
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/20 text-violet-400">
+            <FaExchangeAlt />
+          </div>
+        );
     }
-
-    if (search.trim()) {
-
-      data = data.filter(t =>
-
-        JSON.stringify(t)
-          .toLowerCase()
-          .includes(search.toLowerCase())
-
-      );
-
-    }
-
-    setFiltered(data);
-
-  }, [transactions, search, filter]);
-
-  const totalDeposits = useMemo(() =>
-
-    transactions
-      .filter(t => t.type === "DEPOSIT")
-      .reduce((a, b) => a + Number(b.amount), 0)
-
-  , [transactions]);
-
-  const totalWithdrawals = useMemo(() =>
-
-    transactions
-      .filter(t => t.type === "WITHDRAW")
-      .reduce((a, b) => a + Number(b.amount), 0)
-
-  , [transactions]);
-
-  const totalTransfers = useMemo(() =>
-
-    transactions
-      .filter(t => t.type === "TRANSFER")
-      .reduce((a, b) => a + Number(b.amount), 0)
-
-  , [transactions]);
+  };
 
   return (
-
     <Layout>
-
       <motion.div
-        initial={{opacity:0,y:12}}
-        animate={{opacity:1,y:0}}
-        className="space-y-8"
+        initial={{ opacity: 0, y: 25 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="mx-auto max-w-4xl"
       >
+        <div className="overflow-hidden rounded-[32px] border border-zinc-800 bg-gradient-to-br from-[#171717] via-[#101010] to-[#27134a]">
 
-        <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-8">
+          {/* Header */}
 
-          <div className="flex items-center gap-4">
+          <div className="border-b border-zinc-800 p-8">
 
-            <div className="rounded-2xl bg-violet-600/20 p-4 text-2xl text-violet-400">
+            <div className="flex items-center gap-4">
 
-              <FaHistory />
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/20 text-2xl text-violet-400">
 
-            </div>
+                <FaHistory />
 
-            <div>
+              </div>
 
-              <h1 className="text-4xl font-black text-white">
-                Transaction History
-              </h1>
+              <div>
 
-              <p className="mt-2 text-zinc-400">
-                View every deposit, withdrawal and transfer.
-              </p>
+                <h1 className="text-4xl font-black text-white">
+                  Transaction History
+                </h1>
+
+                <p className="mt-2 text-zinc-400">
+                  View all your banking activities.
+                </p>
+
+              </div>
 
             </div>
 
           </div>
 
-        </div>
+          <div className="p-8">
 
-        <div className="grid gap-6 md:grid-cols-3">
+            {/* Search */}
 
-          <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-6">
+            <div className="relative mb-8">
 
-            <div className="flex items-center gap-3 text-green-400">
-
-              <FaArrowDown />
-
-              Deposits
-
-            </div>
-
-            <h2 className="mt-4 text-3xl font-black text-white">
-
-              ₹{totalDeposits.toLocaleString()}
-
-            </h2>
-
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-6">
-
-            <div className="flex items-center gap-3 text-red-400">
-
-              <FaArrowUp />
-
-              Withdrawals
-
-            </div>
-
-            <h2 className="mt-4 text-3xl font-black text-white">
-
-              ₹{totalWithdrawals.toLocaleString()}
-
-            </h2>
-
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-6">
-
-            <div className="flex items-center gap-3 text-violet-400">
-
-              <FaExchangeAlt />
-
-              Transfers
-
-            </div>
-
-            <h2 className="mt-4 text-3xl font-black text-white">
-
-              ₹{totalTransfers.toLocaleString()}
-
-            </h2>
-
-          </div>
-
-        </div>
-
-        <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-6">
-
-          <div className="flex flex-col gap-4 md:flex-row">
-
-            <div className="relative flex-1">
-
-              <FaSearch className="absolute left-4 top-4 text-zinc-500"/>
+              <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" />
 
               <input
-                value={search}
-                onChange={(e)=>setSearch(e.target.value)}
+                type="text"
                 placeholder="Search transactions..."
-                className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] py-3 pl-12 pr-4 text-white outline-none focus:border-violet-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] py-4 pl-14 pr-5 text-white outline-none transition focus:border-violet-500"
               />
 
             </div>
 
-            <select
-              value={filter}
-              onChange={(e)=>setFilter(e.target.value)}
-              className="rounded-2xl border border-zinc-700 bg-[#0d0d0d] px-5 text-white"
-            >
+            {loading ? (
+              <div className="py-20 text-center text-zinc-400">
+                Loading Transactions...
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl border border-zinc-700 bg-[#111] p-12 text-center text-zinc-500">
+                No Transactions Found
+              </div>
+            ) : (
+              <div className="space-y-5">
 
-              <option value="ALL">All</option>
-              <option value="DEPOSIT">Deposit</option>
-              <option value="WITHDRAW">Withdraw</option>
-              <option value="TRANSFER">Transfer</option>
+                {filtered.map((tx) => (
 
-            </select>
+                  <motion.div
+                    key={tx.id}
+                    whileHover={{ scale: 1.01 }}
+                    className="rounded-2xl border border-zinc-700 bg-[#111111] p-6 transition"
+                  >
 
-          </div>
+                    <div className="flex items-center justify-between">
 
-        </div>
+                      <div className="flex items-center gap-4">
 
-                <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-[#141414]">
+                        {getIcon(tx.type)}
 
-          <div className="overflow-x-auto">
+                        <div>
 
-            <table className="w-full">
+                          <h3 className="text-lg font-bold text-white">
+                            {tx.type}
+                          </h3>
 
-              <thead className="border-b border-zinc-800 bg-[#181818]">
+                          <p className="text-sm text-zinc-500">
+                            {tx.description || "No Description"}
+                          </p>
 
-                <tr className="text-left text-sm uppercase tracking-wider text-zinc-500">
+                        </div>
 
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Description</th>
-                  <th className="px-6 py-4">Date</th>
+                      </div>
 
-                </tr>
+                      <div className="text-right">
 
-              </thead>
+                        <p className="text-2xl font-black text-white">
+                          ₹{Number(tx.amount).toLocaleString()}
+                        </p>
 
-              <tbody>
+                        <p className="text-sm text-zinc-500">
+                          {tx.createdAt
+                            ? new Date(tx.createdAt).toLocaleString()
+                            : ""}
+                        </p>
 
-                {loading ? (
+                      </div>
 
-                  <tr>
+                    </div>
 
-                    <td
-                      colSpan="4"
-                      className="py-12 text-center text-zinc-500"
-                    >
-                      Loading Transactions...
-                    </td>
+                  </motion.div>
 
-                  </tr>
+                ))}
 
-                ) : filtered.length === 0 ? (
-
-                  <tr>
-
-                    <td
-                      colSpan="4"
-                      className="py-12 text-center text-zinc-500"
-                    >
-                      No transactions found.
-                    </td>
-
-                  </tr>
-
-                ) : (
-
-                  filtered.map((txn) => (
-
-                    <tr
-                      key={txn.transactionId}
-                      className="border-b border-zinc-800 transition hover:bg-[#1b1b1b]"
-                    >
-
-                      <td className="px-6 py-5">
-
-                        {txn.type === "DEPOSIT" && (
-
-                          <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-400">
-
-                            Deposit
-
-                          </span>
-
-                        )}
-
-                        {txn.type === "WITHDRAW" && (
-
-                          <span className="rounded-full bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-400">
-
-                            Withdraw
-
-                          </span>
-
-                        )}
-
-                        {txn.type === "TRANSFER" && (
-
-                          <span className="rounded-full bg-violet-500/20 px-3 py-1 text-xs font-semibold text-violet-400">
-
-                            Transfer
-
-                          </span>
-
-                        )}
-
-                      </td>
-
-                      <td className="px-6 py-5 font-bold text-white">
-
-                        ₹{Number(txn.amount).toLocaleString()}
-
-                      </td>
-
-                      <td className="px-6 py-5 text-zinc-300">
-
-                        {txn.description || "-"}
-
-                      </td>
-
-                      <td className="px-6 py-5 text-zinc-500">
-
-                        {txn.timestamp
-                          ? new Date(txn.timestamp).toLocaleString()
-                          : "-"}
-
-                      </td>
-
-                    </tr>
-
-                  ))
-
-                )}
-
-              </tbody>
-
-            </table>
+              </div>
+            )}
 
           </div>
 
         </div>
-
       </motion.div>
-
     </Layout>
-
   );
-
 }

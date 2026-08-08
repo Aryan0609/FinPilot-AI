@@ -1,4 +1,4 @@
-package main.java.com.finpilot.banking.dto;
+package com.finpilot.banking.dto;
 
 import java.math.BigDecimal;
 

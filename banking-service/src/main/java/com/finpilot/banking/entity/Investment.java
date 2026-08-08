@@ -14,8 +14,8 @@ public class Investment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fund_id", nullable = false)
@@ -43,6 +43,9 @@ public class Investment {
 
     @Transient
     public BigDecimal getCurrentValue() {
+        if (mutualFund == null || mutualFund.getNav() == null) {
+            return BigDecimal.ZERO;
+        }
         return unitsPurchased.multiply(mutualFund.getNav());
     }
 
@@ -51,12 +54,14 @@ public class Investment {
         return getCurrentValue().subtract(investmentAmount);
     }
 
+    // ---------------- Getters ----------------
+
     public Long getId() {
         return id;
     }
 
-    public User getUser() {
-        return user;
+    public Account getAccount() {
+        return account;
     }
 
     public MutualFund getMutualFund() {
@@ -79,12 +84,14 @@ public class Investment {
         return investmentDate;
     }
 
+    // ---------------- Setters ----------------
+
     public void setId(Long id) {
         this.id = id;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public void setMutualFund(MutualFund mutualFund) {

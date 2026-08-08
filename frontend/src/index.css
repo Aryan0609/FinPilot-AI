@@ -23,11 +23,8 @@ body,
 
 body {
   margin: 0;
-  overflow: hidden;
   background: radial-gradient(circle at top right,#24103d 0%,#050505 35%);
 }
-
-/* Scrollbar */
 
 ::-webkit-scrollbar {
   width: 7px;
@@ -42,22 +39,20 @@ body {
   background: #555;
 }
 
-/* Reusable classes */
-
 .page-card {
   @apply rounded-3xl border border-zinc-800 bg-[#141414] p-6;
 }
 
 .primary-btn {
-  @apply rounded-2xl bg-violet-600 px-5 py-3 font-semibold text-white transition-all duration-300 hover:bg-violet-500;
+  @apply rounded-2xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-500;
 }
 
 .secondary-btn {
-  @apply rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-3 text-white transition-all duration-300 hover:bg-zinc-800;
+  @apply rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-3 text-white hover:bg-zinc-800;
 }
 
 .dark-input {
-  @apply rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none transition-all focus:border-violet-500;
+  @apply rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none focus:border-violet-500;
 }
 
 .page-title {

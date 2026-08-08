@@ -1,34 +1,57 @@
-version: "3.9"
+
 
 services:
+
   postgres:
     image: postgres:14
     container_name: finpilot-db
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: finpilot
+
     ports:
-      - "5433:5432"
+      - "5434:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    restart: unless-stopped
 
   ai-service:
     build: ./ai-service
-    ports:
-      - "8000:8000"
+
     depends_on:
       - postgres
 
+    ports:
+      - "8000:8000"
+
+    restart: unless-stopped
+
   banking-service:
     build: ./banking-service
-    ports:
-      - "8080:8080"
+
     depends_on:
       - postgres
       - ai-service
 
+    ports:
+      - "8080:8080"
+
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
-    ports:
-      - "5173:5173"
+
     depends_on:
       - banking-service
+
+    ports:
+      - "5173:5173"
+
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -15,6 +15,9 @@ const accountService = {
     return api.get(API.BALANCE(id));
   }
 
-};
 
+};
+export const getUsers = () => {
+  return api.get("/admin/users");
+};
 export default accountService;

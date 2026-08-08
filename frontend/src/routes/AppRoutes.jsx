@@ -1,15 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import PrivateRoute from "./PrivateRoute";
-
-// Authentication
 import Login from "../pages/login/Login";
 import Register from "../pages/login/Register";
 
-// Dashboard
 import Dashboard from "../pages/Dashboard/Dashboard";
 
-// Banking
 import Wallet from "../pages/Banking/Wallet";
 import Deposit from "../pages/Banking/Deposit";
 import Withdraw from "../pages/Banking/Withdraw";
@@ -19,23 +14,19 @@ import Savings from "../pages/Banking/Savings";
 import FD from "../pages/Banking/FD";
 import MutualFunds from "../pages/Banking/MutualFunds";
 
-// AI
 import FraudDetection from "../pages/AI/FraudDetection";
-
-// Profile
 import Profile from "../pages/Profile/Profile";
+
+import PrivateRoute from "./PrivateRoute";
+import AdminRoute from "./AdminRoute";
+import AdminRoutes from "./AdminRoutes";
 
 export default function AppRoutes() {
   return (
     <Routes>
 
-      {/* Public Routes */}
-
       <Route path="/login" element={<Login />} />
-
       <Route path="/register" element={<Register />} />
-
-      {/* Private Routes */}
 
       <Route
         path="/dashboard"
@@ -136,17 +127,18 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Redirects */}
-
       <Route
-        path="/"
-        element={<Navigate to="/dashboard" replace />}
+        path="/admin/*"
+        element={
+          <AdminRoute>
+            <AdminRoutes />
+          </AdminRoute>
+        }
       />
 
-      <Route
-        path="*"
-        element={<Navigate to="/dashboard" replace />}
-      />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
     </Routes>
   );
