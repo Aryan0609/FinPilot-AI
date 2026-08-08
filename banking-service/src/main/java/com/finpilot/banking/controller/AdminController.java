@@ -8,7 +8,7 @@ import com.finpilot.banking.dto.AdminNotificationResponse;
 import org.springframework.web.bind.annotation.*;
 import com.finpilot.banking.dto.AdminChartResponse;
 import java.util.List;
-
+import java.util.Map;
 @RestController
 @RequestMapping("/admin")
 @CrossOrigin
@@ -79,5 +79,16 @@ public List<AdminTransactionResponse> getUserTransactions(
     return adminService.getUserTransactions(id);
 
 }
+@GetMapping("/mutual-funds")
+public List<Map<String, Object>> getMutualFunds() {
+    return adminService.getMutualFunds();
+}
+@GetMapping("/mutual-funds/{id}/investments")
+public List<Map<String, Object>> getMutualFundInvestments(
+        @PathVariable Long id) {
+
+    return adminService.getMutualFundInvestments(id);
+}
+
 
 }

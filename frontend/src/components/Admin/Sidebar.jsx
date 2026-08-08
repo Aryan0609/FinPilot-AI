@@ -11,15 +11,21 @@ import {
 
 import { NavLink } from "react-router-dom";
 
+
 const menu = [
   { name: "Dashboard", path: "/admin", icon: FaHome },
   { name: "Users", path: "/admin/users", icon: FaUsers },
-  { name: "Merchants", path: "/admin/merchants", icon: FaStore },
+  {
+    name: "Mutual Funds",
+    path: "/admin/mutual-funds",
+    icon: FaStore,
+},
   { name: "Transactions", path: "/admin/transactions", icon: FaMoneyCheckAlt },
   { name: "Fraud Detection", path: "/admin/fraud", icon: FaShieldAlt },
   { name: "Notifications", path: "/admin/notifications", icon: FaBell },
   { name: "Profile", path: "/admin/profile", icon: FaUser },
 ];
+
 
 export default function Sidebar() {
   const logout = () => {

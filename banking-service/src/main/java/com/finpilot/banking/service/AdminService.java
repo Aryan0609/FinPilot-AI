@@ -1,61 +1,327 @@
 package com.finpilot.banking.service;
 
+import com.finpilot.banking.dto.AdminChartResponse;
 import com.finpilot.banking.dto.AdminDashboardResponse;
+import com.finpilot.banking.dto.AdminNotificationResponse;
+import com.finpilot.banking.dto.AdminTransactionResponse;
+import com.finpilot.banking.dto.AdminUserDetailResponse;
 import com.finpilot.banking.dto.AdminUserResponse;
+import com.finpilot.banking.entity.Account;
+import com.finpilot.banking.entity.Investment;
 import com.finpilot.banking.entity.Role;
+import com.finpilot.banking.entity.User;
 import com.finpilot.banking.repository.AccountRepository;
+import com.finpilot.banking.repository.InvestmentRepository;
+import com.finpilot.banking.repository.MutualFundRepository;
 import com.finpilot.banking.repository.TransactionRepository;
 import com.finpilot.banking.repository.UserRepository;
-import com.finpilot.banking.dto.AdminTransactionResponse;
-import com.finpilot.banking.entity.Transaction;
-import com.finpilot.banking.dto.AdminNotificationResponse;
+
 import org.springframework.stereotype.Service;
-import com.finpilot.banking.dto.AdminChartResponse;
-import com.finpilot.banking.dto.AdminUserDetailResponse;
-import com.finpilot.banking.entity.Account;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-import com.finpilot.banking.entity.User;
-import com.finpilot.banking.entity.Account;
 
 @Service
 public class AdminService {
 
+
+
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private final MutualFundRepository mutualFundRepository;
+    private final InvestmentRepository investmentRepository;
 
     public AdminService(
-            UserRepository userRepository,
-            TransactionRepository transactionRepository,
-            AccountRepository accountRepository) {
+        UserRepository userRepository,
+        TransactionRepository transactionRepository,
+        AccountRepository accountRepository,
+        MutualFundRepository mutualFundRepository,
+        InvestmentRepository investmentRepository) {
 
-        this.userRepository = userRepository;
-        this.transactionRepository = transactionRepository;
-        this.accountRepository = accountRepository;
-    }
+    this.userRepository = userRepository;
+    this.transactionRepository = transactionRepository;
+    this.accountRepository = accountRepository;
+    this.mutualFundRepository = mutualFundRepository;
+    this.investmentRepository = investmentRepository;
+}
 
-    public List<AdminUserResponse> getRecentUsers() {
+    // =========================================================
+    // MUTUAL FUNDS
+    // =========================================================
 
-    return userRepository.findTop5ByOrderByCreatedAtDesc()
+    // =========================================================
+// MUTUAL FUNDS
+// =========================================================
+
+public List<Map<String, Object>> getMutualFunds() {
+
+    return mutualFundRepository.findAll()
             .stream()
-            .map(user -> {
+            .map(fund -> {
 
-                AdminUserResponse dto = new AdminUserResponse();
+                Map<String, Object> dto = new LinkedHashMap<>();
 
-                dto.setId(user.getId());
-                dto.setName(user.getName());
-                dto.setEmail(user.getEmail());
-                dto.setPhone(user.getPhone());
+                dto.put("id", fund.getId());
+                dto.put("fundName", fund.getFundName());
+                dto.put("fundType", fund.getFundType());
+                dto.put("nav", fund.getNav());
+                dto.put("riskLevel", fund.getRiskLevel());
+                dto.put("annualReturn", fund.getAnnualReturn());
+                dto.put("createdAt", fund.getCreatedAt());
 
-                dto.setRoles(
-                        user.getRoles()
+                // =====================================================
+                // TOTAL UNITS SOLD
+                // =====================================================
+
+                BigDecimal totalUnits = fund.getInvestments()
+                        .stream()
+                        .map(Investment::getUnitsPurchased)
+                        .filter(units -> units != null)
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
+
+                dto.put("totalUnits", totalUnits);
+
+                // Keep this too for backward compatibility
+                dto.put("unitsSold", totalUnits);
+
+                // =====================================================
+                // UNIQUE INVESTORS
+                //
+                // Same user buying multiple times = 1 investor
+                // =====================================================
+
+                long investorCount = fund.getInvestments()
+                        .stream()
+                        .map(investment ->
+                                investment.getAccount()
+                                        .getUser()
+                                        .getId()
+                        )
+                        .distinct()
+                        .count();
+
+                dto.put("investorCount", investorCount);
+
+                // Keep this too for backward compatibility
+                dto.put("investors", investorCount);
+
+                // =====================================================
+                // TOTAL CURRENT VALUE
+                //
+                // units × current NAV
+                // =====================================================
+
+                BigDecimal totalCurrentValue =
+                        fund.getInvestments()
                                 .stream()
-                                .map(Role::getRoleName)
-                                .collect(Collectors.toSet())
+                                .map(investment -> {
+
+                                    BigDecimal units =
+                                            investment.getUnitsPurchased();
+
+                                    if (units == null ||
+                                            fund.getNav() == null) {
+                                        return BigDecimal.ZERO;
+                                    }
+
+                                    return units.multiply(
+                                            fund.getNav()
+                                    );
+                                })
+                                .reduce(
+                                        BigDecimal.ZERO,
+                                        BigDecimal::add
+                                );
+
+                dto.put(
+                        "totalCurrentValue",
+                        totalCurrentValue
+                );
+
+                // =====================================================
+                // TOTAL ORIGINAL INVESTMENT
+                // =====================================================
+
+                BigDecimal totalInvestment =
+                        fund.getInvestments()
+                                .stream()
+                                .map(Investment::getInvestmentAmount)
+                                .filter(amount -> amount != null)
+                                .reduce(
+                                        BigDecimal.ZERO,
+                                        BigDecimal::add
+                                );
+
+                dto.put(
+                        "totalInvestment",
+                        totalInvestment
+                );
+
+                // =====================================================
+                // PROFIT / LOSS
+                // =====================================================
+
+                BigDecimal profitLoss =
+                        totalCurrentValue.subtract(
+                                totalInvestment
+                        );
+
+                dto.put(
+                        "profitLoss",
+                        profitLoss
+                );
+
+                // =====================================================
+                // RETURN %
+                // =====================================================
+
+                BigDecimal returnPercentage =
+                        BigDecimal.ZERO;
+
+                if (totalInvestment.compareTo(
+                        BigDecimal.ZERO) > 0) {
+
+                    returnPercentage =
+                            profitLoss
+                                    .multiply(
+                                            BigDecimal.valueOf(100)
+                                    )
+                                    .divide(
+                                            totalInvestment,
+                                            2,
+                                            java.math.RoundingMode.HALF_UP
+                                    );
+                }
+
+                dto.put(
+                        "returnPercentage",
+                        returnPercentage
+                );
+
+                return dto;
+
+            })
+            .toList();
+    }
+                // =========================================================
+// MUTUAL FUND INVESTMENTS / TRANSACTIONS
+// =========================================================
+
+public List<Map<String, Object>> getMutualFundInvestments(
+        Long fundId) {
+
+    return investmentRepository
+            .findByMutualFundIdOrderByInvestmentDateDesc(fundId)
+            .stream()
+            .map(investment -> {
+
+                Map<String, Object> dto =
+                        new LinkedHashMap<>();
+
+                Account account =
+                        investment.getAccount();
+
+                User user =
+                        account.getUser();
+
+                BigDecimal currentValue =
+                        investment.getCurrentValue();
+
+                BigDecimal profitLoss =
+                        investment.getProfitLoss();
+
+                BigDecimal investmentAmount =
+                        investment.getInvestmentAmount();
+
+                BigDecimal returnPercentage =
+                        BigDecimal.ZERO;
+
+                if (investmentAmount != null
+                        && investmentAmount.compareTo(
+                                BigDecimal.ZERO
+                        ) > 0) {
+
+                    returnPercentage =
+                            profitLoss
+                                    .multiply(
+                                            BigDecimal.valueOf(100)
+                                    )
+                                    .divide(
+                                            investmentAmount,
+                                            2,
+                                            java.math.RoundingMode.HALF_UP
+                                    );
+                }
+
+                dto.put(
+                        "investmentId",
+                        investment.getId()
+                );
+
+                dto.put(
+                        "userId",
+                        user.getId()
+                );
+
+                dto.put(
+                        "userName",
+                        user.getName()
+                );
+
+                dto.put(
+                        "accountId",
+                        account.getId()
+                );
+
+                dto.put(
+                        "units",
+                        investment.getUnitsPurchased()
+                );
+
+                dto.put(
+                        "purchaseNav",
+                        investment.getPurchaseNav()
+                );
+
+                dto.put(
+                        "investmentAmount",
+                        investmentAmount
+                );
+
+                dto.put(
+                        "currentNav",
+                        investment
+                                .getMutualFund()
+                                .getNav()
+                );
+
+                dto.put(
+                        "currentValue",
+                        currentValue
+                );
+
+                dto.put(
+                        "profitLoss",
+                        profitLoss
+                );
+
+                dto.put(
+                        "returnPercentage",
+                        returnPercentage
+                );
+
+                dto.put(
+                        "investmentDate",
+                        investment.getInvestmentDate()
                 );
 
                 return dto;
@@ -64,35 +330,19 @@ public class AdminService {
             .toList();
 }
 
-    // ================= Dashboard =================
+    // =========================================================
+    // RECENT USERS
+    // =========================================================
 
-    public AdminDashboardResponse getDashboard() {
+    public List<AdminUserResponse> getRecentUsers() {
 
-        AdminDashboardResponse response = new AdminDashboardResponse();
-
-        response.setTotalUsers(userRepository.count());
-
-        response.setTotalTransactions(transactionRepository.count());
-
-        response.setTotalWalletBalance(
-                accountRepository.getTotalWalletBalance());
-
-        response.setFraudAlerts(0);
-
-        response.setAiStatus("ONLINE");
-
-        return response;
-    }
-
-    // ================= Users =================
-
-    public List<AdminUserResponse> getUsers() {
-
-        return userRepository.findAll()
+        return userRepository
+                .findTop5ByOrderByCreatedAtDesc()
                 .stream()
                 .map(user -> {
 
-                    AdminUserResponse dto = new AdminUserResponse();
+                    AdminUserResponse dto =
+                            new AdminUserResponse();
 
                     dto.setId(user.getId());
                     dto.setName(user.getName());
@@ -107,233 +357,350 @@ public class AdminService {
                     );
 
                     return dto;
-
                 })
                 .toList();
     }
 
-    public List<AdminTransactionResponse> getRecentTransactions() {
+    // =========================================================
+    // DASHBOARD
+    // =========================================================
 
-    return transactionRepository
-            .findTop5ByOrderByCreatedAtDesc()
-            .stream()
-            .map(transaction -> {
+    public AdminDashboardResponse getDashboard() {
 
-                AdminTransactionResponse dto =
-                        new AdminTransactionResponse();
+        AdminDashboardResponse response =
+                new AdminDashboardResponse();
 
-                dto.setId(transaction.getId());
+        response.setTotalUsers(
+                userRepository.count()
+        );
 
-                dto.setTransactionType(
-                        transaction.getTransactionType().name()
-                );
+        response.setTotalTransactions(
+                transactionRepository.count()
+        );
 
-                dto.setAmount(transaction.getAmount());
+        response.setTotalWalletBalance(
+                accountRepository.getTotalWalletBalance()
+        );
 
-                dto.setTransactionDate(
-                        transaction.getCreatedAt()
-                );
+        /*
+         * Fraud alerts can be connected to the AI/fraud
+         * table later.
+         */
+        response.setFraudAlerts(0);
 
-                return dto;
+        response.setAiStatus("ONLINE");
 
-            })
-            .toList();
-}
-
-// ================= Notifications =================
-
-public List<AdminNotificationResponse> getNotifications() {
-
-    return transactionRepository
-            .findTop10ByOrderByCreatedAtDesc()
-            .stream()
-            .map(transaction -> {
-
-                AdminNotificationResponse dto =
-                        new AdminNotificationResponse();
-
-                dto.setId(transaction.getId());
-
-                dto.setTime(
-                        transaction.getCreatedAt()
-                );
-
-                dto.setMessage(
-
-                        transaction.getTransactionType().name()
-
-                                + " of ₹"
-
-                                + transaction.getAmount()
-
-                                + " completed"
-
-                );
-
-                return dto;
-
-            })
-            .toList();
-
-}
-
-// ================= Dashboard Chart =================
-
-public List<AdminChartResponse> getChartData() {
-
-    Map<String, Long> chart = new LinkedHashMap<>();
-
-    for (int i = 6; i >= 0; i--) {
-
-        LocalDate day = LocalDate.now().minusDays(i);
-
-        chart.put(day.getDayOfWeek().name().substring(0, 3), 0L);
+        return response;
     }
 
-    transactionRepository.findAll().forEach(transaction -> {
+    // =========================================================
+    // ALL USERS
+    // =========================================================
 
-        LocalDate date = transaction
-                .getCreatedAt()
-                .toLocalDate();
+    public List<AdminUserResponse> getUsers() {
 
-        if (date.isAfter(LocalDate.now().minusDays(7))) {
+        return userRepository
+                .findAll()
+                .stream()
+                .map(user -> {
 
-            String key =
-                    date.getDayOfWeek()
-                            .name()
-                            .substring(0, 3);
+                    AdminUserResponse dto =
+                            new AdminUserResponse();
+
+                    dto.setId(user.getId());
+                    dto.setName(user.getName());
+                    dto.setEmail(user.getEmail());
+                    dto.setPhone(user.getPhone());
+
+                    dto.setRoles(
+                            user.getRoles()
+                                    .stream()
+                                    .map(Role::getRoleName)
+                                    .collect(Collectors.toSet())
+                    );
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    // =========================================================
+    // RECENT TRANSACTIONS
+    // =========================================================
+
+    public List<AdminTransactionResponse> getRecentTransactions() {
+
+        return transactionRepository
+                .findTop5ByOrderByCreatedAtDesc()
+                .stream()
+                .map(transaction -> {
+
+                    AdminTransactionResponse dto =
+                            new AdminTransactionResponse();
+
+                    dto.setId(transaction.getId());
+
+                    dto.setTransactionType(
+                            transaction
+                                    .getTransactionType()
+                                    .name()
+                    );
+
+                    dto.setAmount(
+                            transaction.getAmount()
+                    );
+
+                    dto.setTransactionDate(
+                            transaction.getCreatedAt()
+                    );
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    // =========================================================
+    // NOTIFICATIONS
+    // =========================================================
+
+    public List<AdminNotificationResponse> getNotifications() {
+
+        return transactionRepository
+                .findTop10ByOrderByCreatedAtDesc()
+                .stream()
+                .map(transaction -> {
+
+                    AdminNotificationResponse dto =
+                            new AdminNotificationResponse();
+
+                    dto.setId(transaction.getId());
+
+                    dto.setTime(
+                            transaction.getCreatedAt()
+                    );
+
+                    dto.setMessage(
+                            transaction
+                                    .getTransactionType()
+                                    .name()
+                                    + " of ₹"
+                                    + transaction.getAmount()
+                                    + " completed"
+                    );
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    // =========================================================
+    // DASHBOARD CHART
+    // =========================================================
+
+    public List<AdminChartResponse> getChartData() {
+
+        Map<String, Long> chart =
+                new LinkedHashMap<>();
+
+        for (int i = 6; i >= 0; i--) {
+
+            LocalDate day =
+                    LocalDate.now().minusDays(i);
 
             chart.put(
-                    key,
-                    chart.get(key) + 1
+                    day.getDayOfWeek()
+                            .name()
+                            .substring(0, 3),
+                    0L
             );
-
         }
 
-    });
+        transactionRepository
+                .findAll()
+                .forEach(transaction -> {
 
-    return chart.entrySet()
-            .stream()
-            .map(entry ->
-                    new AdminChartResponse(
-                            entry.getKey(),
-                            entry.getValue()
-                    ))
-            .toList();
+                    LocalDate date =
+                            transaction
+                                    .getCreatedAt()
+                                    .toLocalDate();
 
-}
+                    if (date.isAfter(
+                            LocalDate.now().minusDays(7))) {
 
-// ================= All Transactions =================
+                        String key =
+                                date.getDayOfWeek()
+                                        .name()
+                                        .substring(0, 3);
 
-public List<AdminTransactionResponse> getTransactions() {
+                        chart.put(
+                                key,
+                                chart.getOrDefault(key, 0L) + 1
+                        );
+                    }
+                });
 
-    return transactionRepository
-            .findAll()
-            .stream()
-            .sorted((a, b) ->
-                    b.getCreatedAt().compareTo(a.getCreatedAt()))
-            .map(transaction -> {
+        return chart.entrySet()
+                .stream()
+                .map(entry ->
+                        new AdminChartResponse(
+                                entry.getKey(),
+                                entry.getValue()
+                        )
+                )
+                .toList();
+    }
 
-                AdminTransactionResponse dto =
-                        new AdminTransactionResponse();
+    // =========================================================
+    // ALL TRANSACTIONS
+    // =========================================================
 
-                dto.setId(transaction.getId());
+    public List<AdminTransactionResponse> getTransactions() {
 
-                dto.setTransactionType(
-                        transaction.getTransactionType().name()
-                );
+        return transactionRepository
+                .findAll()
+                .stream()
+                .sorted(
+                        (a, b) ->
+                                b.getCreatedAt()
+                                        .compareTo(
+                                                a.getCreatedAt()
+                                        )
+                )
+                .map(transaction -> {
 
-                dto.setAmount(
-                        transaction.getAmount()
-                );
+                    AdminTransactionResponse dto =
+                            new AdminTransactionResponse();
 
-                dto.setTransactionDate(
-                        transaction.getCreatedAt()
-                );
+                    dto.setId(transaction.getId());
 
-                return dto;
+                    dto.setTransactionType(
+                            transaction
+                                    .getTransactionType()
+                                    .name()
+                    );
 
-            })
-            .toList();
-}
+                    dto.setAmount(
+                            transaction.getAmount()
+                    );
 
-public AdminUserDetailResponse getUserDetails(Long id) {
+                    dto.setTransactionDate(
+                            transaction.getCreatedAt()
+                    );
 
-    var user = userRepository.findById(id)
-            .orElseThrow(() ->
-                    new RuntimeException("User not found"));
+                    return dto;
+                })
+                .toList();
+    }
 
-    Account account = accountRepository
-            .findByUser(user)
-            .orElseThrow(() ->
-                    new RuntimeException("Account not found"));
+    // =========================================================
+    // USER DETAILS
+    // =========================================================
 
-    AdminUserDetailResponse dto =
-            new AdminUserDetailResponse();
+    public AdminUserDetailResponse getUserDetails(
+            Long id) {
 
-    dto.setId(user.getId());
+        User user =
+                userRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "User not found"
+                                )
+                        );
 
-    dto.setName(user.getName());
+        Account account =
+                accountRepository
+                        .findByUser(user)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Account not found"
+                                )
+                        );
 
-    dto.setEmail(user.getEmail());
+        AdminUserDetailResponse dto =
+                new AdminUserDetailResponse();
 
-    dto.setPhone(user.getPhone());
+        dto.setId(user.getId());
 
-    dto.setRoles(
+        dto.setName(user.getName());
 
-            user.getRoles()
-                    .stream()
-                    .map(Role::getRoleName)
-                    .collect(Collectors.toSet())
+        dto.setEmail(user.getEmail());
 
-    );
+        dto.setPhone(user.getPhone());
 
-    dto.setAccountNumber(
-            account.getAccountNumber()
-    );
+        dto.setRoles(
+                user.getRoles()
+                        .stream()
+                        .map(Role::getRoleName)
+                        .collect(Collectors.toSet())
+        );
 
-    dto.setBalance(
-            account.getBalance()
-    );
+        dto.setAccountNumber(
+                account.getAccountNumber()
+        );
 
-    return dto;
+        dto.setBalance(
+                account.getBalance()
+        );
 
-}
+        return dto;
+    }
 
-public List<AdminTransactionResponse> getUserTransactions(Long userId) {
+    // =========================================================
+    // USER TRANSACTIONS
+    // =========================================================
 
-    User user = userRepository.findById(userId)
-            .orElseThrow(() ->
-                    new RuntimeException("User not found"));
+    public List<AdminTransactionResponse> getUserTransactions(
+            Long userId) {
 
-    Account account = accountRepository.findByUser(user)
-            .orElseThrow(() ->
-                    new RuntimeException("Account not found"));
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "User not found"
+                                )
+                        );
 
-    return transactionRepository
-            .findByAccountIdOrderByCreatedAtDesc(account.getId())
-            .stream()
-            .map(transaction -> {
+        Account account =
+                accountRepository
+                        .findByUser(user)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Account not found"
+                                )
+                        );
 
-                AdminTransactionResponse dto =
-                        new AdminTransactionResponse();
+        return transactionRepository
+                .findByAccountIdOrderByCreatedAtDesc(
+                        account.getId()
+                )
+                .stream()
+                .map(transaction -> {
 
-                dto.setId(transaction.getId());
+                    AdminTransactionResponse dto =
+                            new AdminTransactionResponse();
 
-                dto.setTransactionType(
-                        transaction.getTransactionType().name()
-                );
+                    dto.setId(
+                            transaction.getId()
+                    );
 
-                dto.setAmount(transaction.getAmount());
+                    dto.setTransactionType(
+                            transaction
+                                    .getTransactionType()
+                                    .name()
+                    );
 
-                dto.setTransactionDate(
-                        transaction.getCreatedAt()
-                );
+                    dto.setAmount(
+                            transaction.getAmount()
+                    );
 
-                return dto;
+                    dto.setTransactionDate(
+                            transaction.getCreatedAt()
+                    );
 
-            })
-            .toList();
-}
-
+                    return dto;
+                })
+                .toList();
+    }
 }

@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-
+import MutualFunds from "../pages/Admin/MutualFunds";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import Users from "../pages/Admin/Users";
-import Merchants from "../pages/Admin/Merchants";
+
 import Transactions from "../pages/Admin/Transactions";
 import FraudDetection from "../pages/Admin/FraudDetection";
 import Notifications from "../pages/Admin/Notifications";
@@ -25,9 +25,9 @@ export default function AdminRoutes() {
       />
 
       <Route
-        path="merchants"
-        element={<Merchants />}
-      />
+  path="mutual-funds"
+  element={<MutualFunds />}
+/>
 
       <Route
         path="transactions"

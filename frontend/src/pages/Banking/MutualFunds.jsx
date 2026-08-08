@@ -25,6 +25,14 @@ export default function MutualFunds() {
 
     const [loading,setLoading]=useState(true);
 
+    const loadFunds = async () => {
+
+    const response = await getMutualFunds();
+
+    setFunds(response.data);
+
+};
+
     const loadData=async()=>{
 
         try{

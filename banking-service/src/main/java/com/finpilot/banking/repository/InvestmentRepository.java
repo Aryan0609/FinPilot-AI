@@ -2,6 +2,8 @@ package com.finpilot.banking.repository;
 
 import com.finpilot.banking.entity.Account;
 import com.finpilot.banking.entity.Investment;
+import com.finpilot.banking.entity.MutualFund;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +15,9 @@ public interface InvestmentRepository
 
     List<Investment> findByAccount(Account account);
 
+    List<Investment> findByMutualFund(MutualFund mutualFund);
+
+    List<Investment> findByMutualFundIdOrderByInvestmentDateDesc(
+            Long mutualFundId
+    );
 }

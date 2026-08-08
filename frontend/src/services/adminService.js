@@ -59,3 +59,11 @@ export const getAIHealth = () => {
 export const getUserTransactions = (id) => {
     return api.get(`/admin/users/${id}/transactions`);
 };
+
+export const getMutualFunds = () => {
+    return api.get("/admin/mutual-funds");
+};
+
+export const getMutualFundInvestments = (fundId) => {
+    return api.get(`/admin/mutual-funds/${fundId}/investments`);
+};
