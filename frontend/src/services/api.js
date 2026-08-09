@@ -8,10 +8,21 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const publicEndpoints = [
+    "/auth/login",
+    "/auth/register",
+  ];
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const isPublic = publicEndpoints.some(
+    (endpoint) => config.url?.includes(endpoint)
+  );
+
+  if (!isPublic) {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   return config;

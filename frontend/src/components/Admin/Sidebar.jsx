@@ -21,7 +21,7 @@ const menu = [
     icon: FaStore,
 },
   { name: "Transactions", path: "/admin/transactions", icon: FaMoneyCheckAlt },
-  { name: "Fraud Detection", path: "/admin/fraud", icon: FaShieldAlt },
+  { name: "Fraud Detection", path: "/admin/fraud-detection", icon: FaShieldAlt },
   { name: "Notifications", path: "/admin/notifications", icon: FaBell },
   { name: "Profile", path: "/admin/profile", icon: FaUser },
 ];

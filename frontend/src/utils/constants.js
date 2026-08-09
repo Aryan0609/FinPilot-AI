@@ -15,7 +15,7 @@ export const ROUTES = {
   WITHDRAW: "/withdraw",
   TRANSFER: "/transfer",
   TRANSACTIONS: "/transactions",
-  FRAUD: "/fraud",
+  FRAUD: "/fraud-detection",
   PROFILE: "/profile",
   NOTIFICATIONS: "/notifications",
 };
