@@ -1,98 +1,98 @@
 import {
   FaHome,
   FaWallet,
-  FaMoneyCheckAlt,
   FaMoneyBillWave,
   FaExchangeAlt,
   FaHistory,
+  FaChartLine,
   FaRobot,
   FaBell,
   FaUser,
   FaSignOutAlt,
+  FaUniversity,
 } from "react-icons/fa";
+
 import { NavLink } from "react-router-dom";
 
 const menu = [
   { name: "Dashboard", path: "/", icon: FaHome },
   { name: "Wallet", path: "/wallet", icon: FaWallet },
-  { name: "Deposit", path: "/deposit", icon: FaMoneyBillWave },
-  { name: "Withdraw", path: "/withdraw", icon: FaMoneyCheckAlt },
   { name: "Transfer", path: "/transfer", icon: FaExchangeAlt },
   { name: "Transactions", path: "/transactions", icon: FaHistory },
-  { name: "AI Services", path: "/fraud", icon: FaRobot },
+  { name: "Mutual Funds", path: "/mutual-funds", icon: FaChartLine },
+  { name: "Fixed Deposits", path: "/fd", icon: FaUniversity },
+  { name: "AI Fraud Detection", path: "/fraud", icon: FaRobot },
   { name: "Notifications", path: "/notifications", icon: FaBell },
-  { name: "Profile", path: "/profile", icon: FaUser },
 ];
 
 export default function Sidebar() {
+
   const logout = () => {
     localStorage.clear();
     window.location.href = "/login";
   };
 
   return (
-    <aside className="flex h-screen w-72 flex-col bg-[#090909] border-r border-zinc-800 text-white sticky top-0">
+    <aside className="sticky top-0 flex h-screen w-[250px] shrink-0 flex-col border-r border-zinc-900 bg-[#050505] text-white">
 
-      {/* Logo */}
-      <div className="px-8 py-8 border-b border-zinc-800">
+      {/* BRAND */}
+      <div className="border-b border-zinc-900 px-6 py-6">
 
-        <h1 className="text-3xl font-black tracking-wide">
-          FinPilot
+        <h1 className="text-2xl font-bold tracking-tight">
+          Fin<span className="text-violet-500">Pilot</span>
         </h1>
 
-        <p className="mt-2 text-sm text-zinc-500">
-          AI Powered Banking
+        <p className="mt-1 text-[11px] uppercase tracking-[2px] text-zinc-600">
+          AI banking
         </p>
 
       </div>
 
-      {/* Navigation */}
+      {/* NAVIGATION */}
+      <nav className="flex-1 overflow-y-auto px-3 py-6">
 
-      <div className="flex-1 px-4 py-6 overflow-y-auto">
-
-        <p className="px-4 mb-4 text-xs uppercase tracking-[4px] text-zinc-600">
-          Navigation
+        <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[2px] text-zinc-700">
+          Workspace
         </p>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
 
           {menu.map((item) => {
+
             const Icon = item.icon;
 
             return (
-              <NavLink key={item.name} to={item.path}>
+              <NavLink
+                key={item.name}
+                to={item.path}
+                end={item.path === "/"}
+              >
                 {({ isActive }) => (
                   <div
-                    className={`group relative flex items-center gap-4 rounded-2xl px-5 py-4 cursor-pointer transition-all duration-300
-
-                    ${
+                    className={`group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200 ${
                       isActive
-                        ? "bg-gradient-to-r from-violet-700 to-violet-600 shadow-lg shadow-violet-900/30"
-                        : "hover:bg-zinc-900"
+                        ? "bg-violet-500/10 text-white"
+                        : "text-zinc-500 hover:bg-zinc-900/70 hover:text-zinc-200"
                     }`}
                   >
+
                     {isActive && (
-                      <div className="absolute left-0 h-8 w-1 rounded-r-full bg-white" />
+                      <span className="absolute left-0 h-6 w-[2px] rounded-r-full bg-violet-500" />
                     )}
 
                     <Icon
-                      size={18}
-                      className={`transition-all duration-300 ${
+                      size={15}
+                      className={
                         isActive
-                          ? "text-white"
-                          : "text-zinc-500 group-hover:text-violet-400"
-                      }`}
+                          ? "text-violet-400"
+                          : "text-zinc-600 group-hover:text-zinc-300"
+                      }
                     />
 
-                    <span
-                      className={`font-medium tracking-wide transition-all ${
-                        isActive
-                          ? "text-white"
-                          : "text-zinc-400 group-hover:text-white"
-                      }`}
-                    >
+                    <span className="text-sm font-medium">
                       {item.name}
                     </span>
+
                   </div>
                 )}
               </NavLink>
@@ -100,33 +100,52 @@ export default function Sidebar() {
           })}
 
         </div>
-      </div>
 
-      {/* Bottom */}
+        <div className="my-6 border-t border-zinc-900" />
 
-      <div className="border-t border-zinc-800 p-5">
+        <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[2px] text-zinc-700">
+          Account
+        </p>
 
-        <div className="mb-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+        <NavLink to="/profile">
+          {({ isActive }) => (
+            <div
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition ${
+                isActive
+                  ? "bg-violet-500/10 text-white"
+                  : "text-zinc-500 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              <FaUser
+                size={15}
+                className={isActive ? "text-violet-400" : "text-zinc-600"}
+              />
 
-          <p className="text-xs uppercase tracking-[3px] text-zinc-500">
+              <span>Profile</span>
+            </div>
+          )}
+        </NavLink>
+
+      </nav>
+
+      {/* FOOTER */}
+      <div className="border-t border-zinc-900 p-4">
+
+        <div className="mb-3 rounded-xl bg-zinc-900/50 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[2px] text-zinc-700">
             FinPilot AI
           </p>
 
-          <h3 className="mt-2 text-lg font-semibold">
-            Smart Banking
-          </h3>
-
-          <p className="mt-1 text-sm text-zinc-500">
-            Secure • Intelligent • Fast
+          <p className="mt-1 text-xs text-zinc-500">
+            Secure intelligent banking
           </p>
-
         </div>
 
         <button
           onClick={logout}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-red-600 py-4 font-semibold transition-all duration-300 hover:bg-red-500 hover:shadow-lg hover:shadow-red-900/30"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-800 py-3 text-sm text-zinc-500 transition hover:border-red-900/70 hover:bg-red-950/20 hover:text-red-400"
         >
-          <FaSignOutAlt size={18} />
+          <FaSignOutAlt size={14} />
           Logout
         </button>
 

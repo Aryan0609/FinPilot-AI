@@ -1,28 +1,22 @@
 import Sidebar from "../components/Sidebar/Sidebar";
 import Navbar from "../components/Navbar/Navbar";
 
-export default function MainLayout({children}){
+export default function MainLayout({ children }) {
+  return (
+    <div className="flex min-h-screen bg-[#050505]">
 
-return(
+      <Sidebar />
 
-<div className="flex">
+      <main className="min-w-0 flex-1 bg-[#050505]">
 
-<Sidebar/>
+        <Navbar />
 
-<div className="flex-1 bg-slate-100 min-h-screen">
+        <div className="px-4 py-5 sm:px-6 lg:px-8">
+          {children}
+        </div>
 
-<Navbar/>
+      </main>
 
-<div className="p-6">
-
-{children}
-
-</div>
-
-</div>
-
-</div>
-
-)
-
+    </div>
+  );
 }

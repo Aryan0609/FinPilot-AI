@@ -6,27 +6,44 @@ import Register from "../pages/login/Register";
 import Dashboard from "../pages/Dashboard/Dashboard";
 
 import Wallet from "../pages/Banking/Wallet";
+import Transfer from "../pages/Banking/Transfer";
 import Deposit from "../pages/Banking/Deposit";
 import Withdraw from "../pages/Banking/Withdraw";
-import Transfer from "../pages/Banking/Transfer";
 import Transactions from "../pages/Banking/Transactions";
-import Savings from "../pages/Banking/Savings";
-import FD from "../pages/Banking/FD";
 import MutualFunds from "../pages/Banking/MutualFunds";
+import FixedDeposits from "../pages/Banking/FD";
 
 import FraudDetection from "../pages/AI/FraudDetection";
+
 import Profile from "../pages/Profile/Profile";
+
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AdminTransactions from "../pages/Admin/Transactions";
+import AdminFraudDetection from "../pages/Admin/FraudDetection";
+import AdminMutualFunds from "../pages/Admin/MutualFunds";
+import AdminNotifications from "../pages/Admin/Notifications";
+import AdminProfile from "../pages/Admin/Profile";
+import AdminUsers from "../pages/Admin/Users";
 
 import PrivateRoute from "./PrivateRoute";
 import AdminRoute from "./AdminRoute";
-import AdminRoutes from "./AdminRoutes";
 
 export default function AppRoutes() {
   return (
     <Routes>
 
+      {/* =========================
+          PUBLIC
+      ========================= */}
+
       <Route path="/login" element={<Login />} />
+
       <Route path="/register" element={<Register />} />
+
+
+      {/* =========================
+          USER
+      ========================= */}
 
       <Route
         path="/dashboard"
@@ -42,6 +59,15 @@ export default function AppRoutes() {
         element={
           <PrivateRoute>
             <Wallet />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/transfer"
+        element={
+          <PrivateRoute>
+            <Transfer />
           </PrivateRoute>
         }
       />
@@ -65,37 +91,10 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/transfer"
-        element={
-          <PrivateRoute>
-            <Transfer />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
         path="/transactions"
         element={
           <PrivateRoute>
             <Transactions />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/savings"
-        element={
-          <PrivateRoute>
-            <Savings />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/fd"
-        element={
-          <PrivateRoute>
-            <FD />
           </PrivateRoute>
         }
       />
@@ -110,7 +109,16 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/fraud"
+        path="/fixed-deposits"
+        element={
+          <PrivateRoute>
+            <FixedDeposits />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/fraud-detection"
         element={
           <PrivateRoute>
             <FraudDetection />
@@ -127,18 +135,97 @@ export default function AppRoutes() {
         }
       />
 
+
+      {/* =========================
+          ADMIN
+      ========================= */}
+
       <Route
-        path="/admin/*"
+        path="/admin"
         element={
           <AdminRoute>
-            <AdminRoutes />
+            <AdminDashboard />
           </AdminRoute>
         }
       />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/admin/transactions"
+        element={
+          <AdminRoute>
+            <AdminTransactions />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/fraud-detection"
+        element={
+          <AdminRoute>
+            <AdminFraudDetection />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/mutual-funds"
+        element={
+          <AdminRoute>
+            <AdminMutualFunds />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/notifications"
+        element={
+          <AdminRoute>
+            <AdminNotifications />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/profile"
+        element={
+          <AdminRoute>
+            <AdminProfile />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <AdminRoute>
+            <AdminUsers />
+          </AdminRoute>
+        }
+      />
+
+
+      {/* =========================
+          FALLBACK
+      ========================= */}
+
+      <Route
+        path="/"
+        element={<Navigate to="/dashboard" replace />}
+      />
+
+      <Route
+        path="*"
+        element={<Navigate to="/dashboard" replace />}
+      />
 
     </Routes>
   );
