@@ -75,7 +75,7 @@ export default function Login() {
     "AI-powered fraud detection",
     "Secure JWT authentication",
     "Wallet & instant transfers",
-    "Fixed deposits "Savings & fixed deposits" investments",
+    "Savings & fixed deposits investments",
     "Mutual fund portfolio tracking",
   ];
 
