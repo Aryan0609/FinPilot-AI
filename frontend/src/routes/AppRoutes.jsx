@@ -10,7 +10,6 @@ import Deposit from "../pages/Banking/Deposit";
 import Withdraw from "../pages/Banking/Withdraw";
 import Transfer from "../pages/Banking/Transfer";
 import Transactions from "../pages/Banking/Transactions";
-import Savings from "../pages/Banking/Savings";
 import FD from "../pages/Banking/FD";
 import MutualFunds from "../pages/Banking/MutualFunds";
 
@@ -82,64 +81,3 @@ export default function AppRoutes() {
         }
       />
 
-      <Route
-        path="/savings"
-        element={
-          <PrivateRoute>
-            <Savings />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/fd"
-        element={
-          <PrivateRoute>
-            <FD />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/mutual-funds"
-        element={
-          <PrivateRoute>
-            <MutualFunds />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/fraud"
-        element={
-          <PrivateRoute>
-            <FraudDetection />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/profile"
-        element={
-          <PrivateRoute>
-            <Profile />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/admin/*"
-        element={
-          <AdminRoute>
-            <AdminRoutes />
-          </AdminRoute>
-        }
-      />
-
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-
-    </Routes>
-  );
-}

@@ -378,88 +378,209 @@ export default function FraudDetection() {
 
         </form>
 
-        {result && (
+        {result && (() => {
+  const fraudProbability = Math.max(
+    0,
+    Math.min(
+      100,
+      Number(result.fraud_probability) || 0
+    )
+  );
 
-          <div className="rounded-3xl border border-zinc-800 bg-[#141414] p-8">
+  const riskLevel = String(
+    result.risk_level || "LOW"
+  ).toUpperCase();
 
-            <h2 className="mb-8 text-2xl font-bold text-white">
-              AI Prediction Result
-            </h2>
+  const isHigh = riskLevel === "HIGH";
+  const isMedium = riskLevel === "MEDIUM";
 
-            <div className="grid gap-6 md:grid-cols-2">
+  const statusLabel = isHigh
+    ? "HIGH RISK"
+    : isMedium
+      ? "REVIEW"
+      : "SAFE";
 
-              <div>
+  const statusIcon = isHigh
+    ? "🚨"
+    : isMedium
+      ? "⚠️"
+      : "✓";
 
-                <p className="text-sm uppercase tracking-wider text-zinc-500">
-                  Prediction
-                </p>
+  const statusClasses = isHigh
+    ? "bg-red-500/15 text-red-400 border-red-500/20"
+    : isMedium
+      ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/20"
+      : "bg-green-500/15 text-green-400 border-green-500/20";
 
-                <span
-                  className={`mt-3 inline-block rounded-full px-4 py-2 font-bold ${
-                    result.prediction === 1
-                      ? "bg-red-500/20 text-red-400"
-                      : "bg-green-500/20 text-green-400"
-                  }`}
-                >
-                  {result.prediction === 1
-                    ? "🚨 FRAUD"
-                    : "✅ SAFE"}
-                </span>
+  const barClass = isHigh
+    ? "bg-red-500"
+    : isMedium
+      ? "bg-yellow-500"
+      : "bg-green-500";
 
-              </div>
+  const recommendation = isHigh
+    ? "This transaction has a high fraud risk. Review the transaction carefully before proceeding."
+    : isMedium
+      ? "This transaction requires additional review. Verify the transaction details before proceeding."
+      : "The transaction appears safe according to the FinPilot AI fraud detection model.";
 
-              <div>
+  return (
+    <div className="mt-8 rounded-3xl border border-zinc-800 bg-[#141414] p-8 shadow-2xl">
 
-                <p className="text-sm uppercase tracking-wider text-zinc-500">
-                  Fraud Probability
-                </p>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-violet-400">
+            AI Analysis
+          </p>
 
-                <h2 className="mt-3 text-4xl font-black text-white">
-                  {(result.fraud_probability * 100).toFixed(2)}%
-                </h2>
+          <h2 className="mt-2 text-3xl font-bold text-white">
+            Prediction Result
+          </h2>
+        </div>
 
-              </div>
+        <div
+          className={`rounded-full border px-4 py-2 text-sm font-semibold ${statusClasses}`}
+        >
+          {statusIcon} {statusLabel}
+        </div>
+      </div>
 
-            </div>
+      {/* Main result */}
+      <div className="mt-8 grid gap-8 md:grid-cols-2">
 
-            <div className="mt-8">
+        {/* Prediction */}
+        <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-6">
+          <p className="text-sm uppercase tracking-wider text-zinc-500">
+            Prediction
+          </p>
 
-              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
+          <div className="mt-4 flex items-center gap-3">
+            <span
+              className={`flex h-11 w-11 items-center justify-center rounded-full text-xl ${statusClasses}`}
+            >
+              {statusIcon}
+            </span>
 
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    result.prediction === 1
-                      ? "bg-red-500"
-                      : "bg-green-500"
-                  }`}
-                  style={{
-                    width: `${result.fraud_probability * 100}%`,
-                  }}
-                />
-
-              </div>
-
-            </div>
-
-            <div className="mt-8 rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-6">
-
-              <h3 className="mb-3 text-lg font-bold text-white">
-                Recommendation
-              </h3>
-
-              <p className="text-zinc-300">
-
-                {result.prediction === 1
-                  ? "This transaction appears suspicious. Review it carefully before proceeding."
-                  : "The transaction appears safe according to the FinPilot AI fraud detection model."}
-
+            <div>
+              <p className="text-xl font-bold text-white">
+                {statusLabel}
               </p>
 
+              <p className="mt-1 text-sm text-zinc-500">
+                Risk level: {riskLevel}
+              </p>
             </div>
+          </div>
+        </div>
 
+        {/* Probability */}
+        <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-6">
+          <p className="text-sm uppercase tracking-wider text-zinc-500">
+            Fraud Probability
+          </p>
+
+          <div className="mt-3">
+            <span className="text-5xl font-black text-white">
+              {fraudProbability.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Probability bar */}
+      <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between text-sm">
+          <span className="text-zinc-500">
+            Risk assessment
+          </span>
+
+          <span className="font-semibold text-zinc-300">
+            {fraudProbability.toFixed(2)}%
+          </span>
+        </div>
+
+        <div className="h-4 w-full overflow-hidden rounded-full bg-zinc-800">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ease-out ${barClass}`}
+            style={{
+              width: `${fraudProbability}%`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Recommendation */}
+      <div className="mt-8 rounded-2xl border border-zinc-800 bg-[#0b0b0b] p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">
+            {statusIcon}
+          </span>
+
+          <h3 className="text-xl font-bold text-white">
+            Recommendation
+          </h3>
+        </div>
+
+        <p className="mt-4 leading-7 text-zinc-400">
+          {recommendation}
+        </p>
+      </div>
+
+      {/* Model details */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+
+        <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-5">
+          <p className="text-xs uppercase tracking-wider text-zinc-500">
+            Risk Score
+          </p>
+
+          <p className="mt-2 text-2xl font-bold text-white">
+            {Number(result.risk_score || 0).toFixed(2)}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-5">
+          <p className="text-xs uppercase tracking-wider text-zinc-500">
+            Model Status
+          </p>
+
+          <p className="mt-2 text-2xl font-bold text-green-400">
+            AI Active
+          </p>
+        </div>
+
+      </div>
+
+      {/* Reasons */}
+      {Array.isArray(result.reasons) && result.reasons.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-zinc-800 bg-[#0d0d0d] p-6">
+
+          <h3 className="text-lg font-bold text-white">
+            Detection Factors
+          </h3>
+
+          <div className="mt-4 space-y-2">
+            {result.reasons.map((reason, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl bg-[#151515] px-4 py-3 text-sm text-zinc-300"
+              >
+                <span className="text-violet-400">
+                  •
+                </span>
+
+                {reason}
+              </div>
+            ))}
           </div>
 
-        )}
+        </div>
+      )}
+
+    </div>
+  );
+})()}
 
       </div>
 
