@@ -1,14 +1,17 @@
 package com.finpilot.banking.service;
 
+import com.finpilot.banking.dto.PredictionRequest;
+import com.finpilot.banking.dto.PredictionResponse;
 import com.finpilot.banking.dto.TransactionResponse;
 import com.finpilot.banking.entity.Account;
 import com.finpilot.banking.entity.Transaction;
 import com.finpilot.banking.entity.TransactionStatus;
 import com.finpilot.banking.entity.TransactionType;
+import com.finpilot.banking.entity.User;
 import com.finpilot.banking.repository.AccountRepository;
 import com.finpilot.banking.repository.TransactionRepository;
-import com.finpilot.banking.dto.PredictionRequest;
-import com.finpilot.banking.dto.PredictionResponse;
+import com.finpilot.banking.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +30,11 @@ public class TransactionServiceImpl implements TransactionService {
     private TransactionRepository transactionRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private AIService aiService;
+
 
     // -------------------------------------------------------
     // Deposit
@@ -35,17 +42,22 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public TransactionResponse deposit(Long accountId,
-                                       BigDecimal amount) {
+    public TransactionResponse deposit(
+            Long accountId,
+            BigDecimal amount,
+            String description,
+            String userEmail) {
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Invalid amount");
-        }
+        validateAmount(amount);
+
+        User user = getUser(userEmail);
 
         Account account = accountRepository
-                .findById(accountId)
+                .findByIdForUpdate(accountId)
                 .orElseThrow(() ->
                         new RuntimeException("Account not found"));
+
+        verifyOwnership(account, user);
 
         account.setBalance(
                 account.getBalance().add(amount)
@@ -59,7 +71,9 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setAmount(amount);
         transaction.setTransactionType(TransactionType.DEPOSIT);
         transaction.setStatus(TransactionStatus.SUCCESS);
-        transaction.setDescription("Cash Deposit");
+        transaction.setDescription(
+                normalizeDescription(description, "Cash Deposit")
+        );
         transaction.setReferenceNumber(
                 UUID.randomUUID().toString()
         );
@@ -69,23 +83,29 @@ public class TransactionServiceImpl implements TransactionService {
         return map(transaction);
     }
 
+
     // -------------------------------------------------------
     // Withdraw
     // -------------------------------------------------------
 
     @Override
     @Transactional
-    public TransactionResponse withdraw(Long accountId,
-                                        BigDecimal amount) {
+    public TransactionResponse withdraw(
+            Long accountId,
+            BigDecimal amount,
+            String description,
+            String userEmail) {
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Invalid amount");
-        }
+        validateAmount(amount);
+
+        User user = getUser(userEmail);
 
         Account account = accountRepository
-                .findById(accountId)
+                .findByIdForUpdate(accountId)
                 .orElseThrow(() ->
                         new RuntimeException("Account not found"));
+
+        verifyOwnership(account, user);
 
         if (account.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Insufficient Balance");
@@ -103,7 +123,9 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setAmount(amount);
         transaction.setTransactionType(TransactionType.WITHDRAW);
         transaction.setStatus(TransactionStatus.SUCCESS);
-        transaction.setDescription("Cash Withdrawal");
+        transaction.setDescription(
+                normalizeDescription(description, "Cash Withdrawal")
+        );
         transaction.setReferenceNumber(
                 UUID.randomUUID().toString()
         );
@@ -113,37 +135,81 @@ public class TransactionServiceImpl implements TransactionService {
         return map(transaction);
     }
 
+
     // -------------------------------------------------------
     // Transfer
     // -------------------------------------------------------
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public TransactionResponse transfer(Long fromAccountId,
-                                        Long toAccountId,
-                                        BigDecimal amount) {
+    public TransactionResponse transfer(
+            String toAccountNumber,
+            BigDecimal amount,
+            String description,
+            String userEmail) {
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException(
-                    "Amount must be greater than zero"
-            );
+        validateAmount(amount);
+
+        if (toAccountNumber == null || toAccountNumber.isBlank()) {
+            throw new RuntimeException("Receiver account number is required");
         }
 
-        if (fromAccountId.equals(toAccountId)) {
+        User user = getUser(userEmail);
+
+        // -------------------------------------------------------
+        // SECURITY:
+        // Sender is ALWAYS the authenticated user's account.
+        // The frontend cannot choose the sender account.
+        // -------------------------------------------------------
+
+        Account sender = accountRepository
+                .findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Sender account not found")
+                );
+
+        Account receiver = accountRepository
+                .findByAccountNumber(toAccountNumber.trim())
+                .orElseThrow(() ->
+                        new RuntimeException("Receiver account not found")
+                );
+
+        if (sender.getId().equals(receiver.getId())) {
             throw new RuntimeException(
                     "Cannot transfer to same account"
             );
         }
 
-        Account sender = accountRepository
-                .findById(fromAccountId)
-                .orElseThrow(() ->
-                        new RuntimeException("Sender not found"));
+        // -------------------------------------------------------
+        // Lock accounts in ID order.
+        // Prevents opposite-direction transfers from deadlocking.
+        // -------------------------------------------------------
 
-        Account receiver = accountRepository
-                .findById(toAccountId)
+        Long firstId = Math.min(sender.getId(), receiver.getId());
+        Long secondId = Math.max(sender.getId(), receiver.getId());
+
+        Account firstLocked = accountRepository
+                .findByIdForUpdate(firstId)
                 .orElseThrow(() ->
-                        new RuntimeException("Receiver not found"));
+                        new RuntimeException("Account not found")
+                );
+
+        Account secondLocked = accountRepository
+                .findByIdForUpdate(secondId)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found")
+                );
+
+        if (sender.getId().equals(firstId)) {
+            sender = firstLocked;
+            receiver = secondLocked;
+        } else {
+            sender = secondLocked;
+            receiver = firstLocked;
+        }
+
+        // Final ownership verification after locking.
+        verifyOwnership(sender, user);
 
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException(
@@ -157,50 +223,65 @@ public class TransactionServiceImpl implements TransactionService {
 
         PredictionRequest request = new PredictionRequest();
 
-request.setStep(1);
-request.setType("TRANSFER");
+        request.setStep(1);
+        request.setType("TRANSFER");
 
-request.setAmount(amount.doubleValue());
+        request.setAmount(amount.doubleValue());
 
-request.setOldbalanceOrg(
-        sender.getBalance().doubleValue()
-);
+        request.setOldbalanceOrg(
+                sender.getBalance().doubleValue()
+        );
 
-request.setNewbalanceOrig(
-        sender.getBalance()
-                .subtract(amount)
-                .doubleValue()
-);
+        request.setNewbalanceOrig(
+                sender.getBalance()
+                        .subtract(amount)
+                        .doubleValue()
+        );
 
-request.setOldbalanceDest(
-        receiver.getBalance().doubleValue()
-);
+        request.setOldbalanceDest(
+                receiver.getBalance().doubleValue()
+        );
 
-request.setNewbalanceDest(
-        receiver.getBalance()
-                .add(amount)
-                .doubleValue()
-);
+        request.setNewbalanceDest(
+                receiver.getBalance()
+                        .add(amount)
+                        .doubleValue()
+        );
 
-PredictionResponse prediction =
-        aiService.predict(request);
+        PredictionResponse prediction =
+                aiService.predict(request);
 
-System.out.println("========== AI RESULT ==========");
-System.out.println("Prediction : " + prediction.getPrediction());
-System.out.println("Probability : " + prediction.getFraud_probability());
-System.out.println("Risk Score : " + prediction.getRisk_score());
-System.out.println("Risk Level : " + prediction.getRisk_level());
+        System.out.println("========== AI RESULT ==========");
+        System.out.println(
+                "Prediction : "
+                        + prediction.getPrediction()
+        );
+        System.out.println(
+                "Probability : "
+                        + prediction.getFraud_probability()
+        );
+        System.out.println(
+                "Risk Score : "
+                        + prediction.getRisk_score()
+        );
+        System.out.println(
+                "Risk Level : "
+                        + prediction.getRisk_level()
+        );
 
-if (prediction.getRisk_score() >= 80) {
+        if (prediction.getRisk_score() >= 80) {
+            throw new RuntimeException(
+                    "Transaction Blocked\n\n"
+                            + "Risk Level : "
+                            + prediction.getRisk_level()
+                            + "\n\nReasons : "
+                            + prediction.getReasons()
+            );
+        }
 
-    throw new RuntimeException(
-            "Transaction Blocked\n\n"
-            + "Risk Level : "
-            + prediction.getRisk_level()
-            + "\n\nReasons : "
-            + prediction.getReasons()
-    );
-}
+        // =====================================================
+        // UPDATE BALANCES
+        // =====================================================
 
         sender.setBalance(
                 sender.getBalance().subtract(amount)
@@ -213,6 +294,10 @@ if (prediction.getRisk_score() >= 80) {
         accountRepository.saveAll(
                 List.of(sender, receiver)
         );
+
+        // =====================================================
+        // CREATE TRANSACTIONS
+        // =====================================================
 
         String reference =
                 UUID.randomUUID().toString();
@@ -231,8 +316,11 @@ if (prediction.getRisk_score() >= 80) {
         );
 
         debit.setDescription(
-                "Transfer to "
-                        + receiver.getAccountNumber()
+                normalizeDescription(
+                        description,
+                        "Transfer to "
+                                + receiver.getAccountNumber()
+                )
         );
 
         debit.setReferenceNumber(reference);
@@ -240,7 +328,6 @@ if (prediction.getRisk_score() >= 80) {
         Transaction credit = new Transaction();
 
         credit.setAccount(receiver);
-
         credit.setAmount(amount);
 
         credit.setTransactionType(
@@ -264,28 +351,104 @@ if (prediction.getRisk_score() >= 80) {
 
         return map(debit);
     }
-        // -------------------------------------------------------
+
+    // -------------------------------------------------------
     // Transaction History
     // -------------------------------------------------------
 
     @Override
-    public List<TransactionResponse> getTransactionHistory(Long accountId) {
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> getTransactionHistory(
+            Long accountId,
+            String userEmail) {
+
+        User user = getUser(userEmail);
+
+        Account account = accountRepository
+                .findById(accountId)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found"));
+
+        /*
+         * Prevent users from viewing another user's
+         * transaction history.
+         */
+        verifyOwnership(account, user);
 
         return transactionRepository
                 .findByAccountIdOrderByCreatedAtDesc(accountId)
                 .stream()
                 .map(this::map)
                 .toList();
-
     }
+
+
+    // -------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------
+
+    private User getUser(String email) {
+
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Authenticated user not found"
+                        )
+                );
+    }
+
+
+    private void verifyOwnership(
+            Account account,
+            User user) {
+
+        if (account.getUser() == null
+                || !account.getUser().getId()
+                        .equals(user.getId())) {
+
+            throw new RuntimeException(
+                    "You are not authorized to access this account"
+            );
+        }
+    }
+
+
+    private void validateAmount(BigDecimal amount) {
+
+        if (amount == null
+                || amount.compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new RuntimeException(
+                    "Amount must be greater than zero"
+            );
+        }
+    }
+
+
+    private String normalizeDescription(
+            String description,
+            String fallback) {
+
+        if (description == null
+                || description.trim().isEmpty()) {
+
+            return fallback;
+        }
+
+        return description.trim();
+    }
+
 
     // -------------------------------------------------------
     // Mapper
     // -------------------------------------------------------
 
-    private TransactionResponse map(Transaction transaction) {
+    private TransactionResponse map(
+            Transaction transaction) {
 
-        TransactionResponse response = new TransactionResponse();
+        TransactionResponse response =
+                new TransactionResponse();
 
         response.setTransactionId(
                 transaction.getId()
@@ -317,5 +480,4 @@ if (prediction.getRisk_score() >= 80) {
 
         return response;
     }
-
 }
