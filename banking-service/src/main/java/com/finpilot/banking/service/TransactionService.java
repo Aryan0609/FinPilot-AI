@@ -7,13 +7,32 @@ import java.util.List;
 
 public interface TransactionService {
 
-    TransactionResponse deposit(Long accountId, BigDecimal amount);
+    TransactionResponse deposit(
+            Long accountId,
+            BigDecimal amount,
+            String description,
+            String bankingPin,
+            String userEmail
+    );
 
-    TransactionResponse withdraw(Long accountId, BigDecimal amount);
+    TransactionResponse withdraw(
+            Long accountId,
+            BigDecimal amount,
+            String description,
+            String bankingPin,
+            String userEmail
+    );
 
-    TransactionResponse transfer(Long fromAccountId,
-                                 Long toAccountId,
-                                 BigDecimal amount);
+    TransactionResponse transfer(
+            String toAccountNumber,
+            BigDecimal amount,
+            String description,
+            String bankingPin,
+            String userEmail
+    );
 
-    List<TransactionResponse> getTransactionHistory(Long accountId);
+    List<TransactionResponse> getTransactionHistory(
+            Long accountId,
+            String userEmail
+    );
 }

@@ -1,5 +1,7 @@
 package com.finpilot.banking.service;
 
+import com.finpilot.banking.exception.ResourceNotFoundException;
+import com.finpilot.banking.exception.BadRequestException;
 import com.finpilot.banking.dto.InvestmentResponse;
 import com.finpilot.banking.dto.MutualFundRequest;
 import com.finpilot.banking.dto.MutualFundResponse;
@@ -112,7 +114,7 @@ Account account =
 System.out.println("Account Object = " + account);
 
 if (account == null) {
-    throw new RuntimeException("Account not found");
+    throw new ResourceNotFoundException("Account not found");
 }
 
         MutualFund fund =
@@ -123,14 +125,14 @@ if (account == null) {
         if (request.getAmount()
                 .compareTo(BigDecimal.ZERO) <= 0) {
 
-            throw new RuntimeException("Invalid amount");
+            throw new BadRequestException("Invalid amount");
 
         }
 
         if (account.getBalance()
                 .compareTo(request.getAmount()) < 0) {
 
-            throw new RuntimeException("Insufficient balance");
+            throw new BadRequestException("Insufficient balance");
 
         }
 

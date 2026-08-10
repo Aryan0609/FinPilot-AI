@@ -5,7 +5,9 @@ import com.finpilot.banking.dto.TransactionResponse;
 import com.finpilot.banking.dto.TransferRequest;
 import com.finpilot.banking.dto.WithdrawRequest;
 import com.finpilot.banking.service.TransactionService;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,47 +25,62 @@ public class TransactionController {
 
     @PostMapping("/deposit")
     public ResponseEntity<TransactionResponse> deposit(
-            @RequestBody DepositRequest request) {
+            @RequestBody DepositRequest request,
+            Authentication authentication) {
 
         return ResponseEntity.ok(
                 transactionService.deposit(
                         request.getAccountId(),
-                        request.getAmount()
+                        request.getAmount(),
+                        request.getDescription(),
+                        request.getBankingPin(),
+                        authentication.getName()
                 )
         );
     }
 
     @PostMapping("/withdraw")
     public ResponseEntity<TransactionResponse> withdraw(
-            @RequestBody WithdrawRequest request) {
+            @RequestBody WithdrawRequest request,
+            Authentication authentication) {
 
         return ResponseEntity.ok(
                 transactionService.withdraw(
                         request.getAccountId(),
-                        request.getAmount()
+                        request.getAmount(),
+                        request.getDescription(),
+                        request.getBankingPin(),
+                        authentication.getName()
                 )
         );
     }
 
     @PostMapping("/transfer")
     public ResponseEntity<TransactionResponse> transfer(
-            @RequestBody TransferRequest request) {
+            @RequestBody TransferRequest request,
+            Authentication authentication) {
 
         return ResponseEntity.ok(
                 transactionService.transfer(
-                        request.getFromAccountId(),
-                        request.getToAccountId(),
-                        request.getAmount()
+                        request.getToAccountNumber(),
+                        request.getAmount(),
+                        request.getDescription(),
+                        request.getBankingPin(),
+                        authentication.getName()
                 )
         );
     }
 
     @GetMapping("/account/{accountId}")
     public ResponseEntity<List<TransactionResponse>> history(
-            @PathVariable Long accountId) {
+            @PathVariable Long accountId,
+            Authentication authentication) {
 
         return ResponseEntity.ok(
-                transactionService.getTransactionHistory(accountId)
+                transactionService.getTransactionHistory(
+                        accountId,
+                        authentication.getName()
+                )
         );
     }
 }

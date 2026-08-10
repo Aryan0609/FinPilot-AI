@@ -15,14 +15,13 @@ import {
 import { NavLink } from "react-router-dom";
 
 const menu = [
-  { name: "Dashboard", path: "/", icon: FaHome },
+  { name: "Dashboard", path: "/dashboard", icon: FaHome },
   { name: "Wallet", path: "/wallet", icon: FaWallet },
   { name: "Transfer", path: "/transfer", icon: FaExchangeAlt },
   { name: "Transactions", path: "/transactions", icon: FaHistory },
   { name: "Mutual Funds", path: "/mutual-funds", icon: FaChartLine },
-  { name: "Fixed Deposits", path: "/fd", icon: FaUniversity },
-  { name: "AI Fraud Detection", path: "/fraud", icon: FaRobot },
-  { name: "Notifications", path: "/notifications", icon: FaBell },
+  { name: "Fixed Deposits", path: "/fixed-deposits", icon: FaUniversity },
+  { name: "AI Fraud Detection", path: "/fraud-detection", icon: FaRobot },
 ];
 
 export default function Sidebar() {

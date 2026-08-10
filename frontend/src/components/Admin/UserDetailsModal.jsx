@@ -8,6 +8,8 @@ import {
   FaCreditCard,
 } from "react-icons/fa";
 
+import { formatDateTime } from "../../utils/formatters";
+
 import { getUserTransactions } from "../../services/adminService";
 
 export default function UserDetailsModal({
@@ -133,7 +135,7 @@ export default function UserDetailsModal({
                     </p>
 
                     <p className="text-sm text-zinc-500">
-                      {new Date(tx.transactionDate).toLocaleString()}
+                      {formatDateTime(tx.transactionDate)}
                     </p>
                   </div>
 

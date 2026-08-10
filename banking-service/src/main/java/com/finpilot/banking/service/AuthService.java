@@ -82,7 +82,27 @@ public class AuthService {
 
 
 
-        Role userRole =
+    
+    // Banking PIN must be exactly 4 numeric digits
+    if (request.getBankingPin() == null ||
+            !request.getBankingPin().matches("\\d{4}")) {
+
+        throw new RuntimeException(
+                "Banking PIN must be exactly 4 digits"
+        );
+    }
+
+    // Never store the banking PIN in plain text
+    user.setBankingPinHash(
+            passwordEncoder.encode(
+                    request.getBankingPin()
+            )
+    );
+
+    user.setPinFailedAttempts(0);
+    user.setPinLockedUntil(null);
+
+    Role userRole =
                 roleRepository
                 .findByRoleName("ROLE_USER")
                 .orElseThrow(() ->

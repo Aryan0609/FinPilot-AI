@@ -4,28 +4,21 @@ import java.math.BigDecimal;
 
 public class TransferRequest {
 
-    private Long fromAccountId;
-    private Long toAccountId;
+    private String bankingPin;
+
+    private String toAccountNumber;
     private BigDecimal amount;
     private String description;
 
     public TransferRequest() {
     }
 
-    public Long getFromAccountId() {
-        return fromAccountId;
+    public String getToAccountNumber() {
+        return toAccountNumber;
     }
 
-    public void setFromAccountId(Long fromAccountId) {
-        this.fromAccountId = fromAccountId;
-    }
-
-    public Long getToAccountId() {
-        return toAccountId;
-    }
-
-    public void setToAccountId(Long toAccountId) {
-        this.toAccountId = toAccountId;
+    public void setToAccountNumber(String toAccountNumber) {
+        this.toAccountNumber = toAccountNumber;
     }
 
     public BigDecimal getAmount() {
@@ -44,13 +37,11 @@ public class TransferRequest {
         this.description = description;
     }
 
-    @Override
-    public String toString() {
-    return "TransferRequest{" +
-            "fromAccountId=" + fromAccountId +
-            ", toAccountId=" + toAccountId +
-            ", amount=" + amount +
-            ", description='" + description + '\'' +
-            '}';
-}
+    public String getBankingPin() {
+        return bankingPin;
+    }
+
+    public void setBankingPin(String bankingPin) {
+        this.bankingPin = bankingPin;
+    }
 }

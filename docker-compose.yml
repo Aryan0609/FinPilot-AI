@@ -37,6 +37,10 @@ services:
       - postgres
       - ai-service
 
+    environment:
+      TZ: Asia/Kolkata
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Kolkata"
+
     ports:
       - "8080:8080"
 

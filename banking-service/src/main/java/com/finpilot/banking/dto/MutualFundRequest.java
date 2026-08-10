@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 
 public class MutualFundRequest {
 
+    private String bankingPin;
+
     private Long fundId;
 
     private BigDecimal amount;
@@ -25,5 +27,13 @@ public class MutualFundRequest {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public String getBankingPin() {
+        return bankingPin;
+    }
+
+    public void setBankingPin(String bankingPin) {
+        this.bankingPin = bankingPin;
     }
 }

@@ -10,6 +10,7 @@ public class RegisterRequest {
     private String phone;
     private String accountType;
     private BigDecimal initialBalance;
+    private String bankingPin;
 
     public RegisterRequest() {
     }
@@ -38,6 +39,10 @@ public class RegisterRequest {
         return initialBalance;
     }
 
+    public String getBankingPin() {
+        return bankingPin;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -60,5 +65,9 @@ public class RegisterRequest {
 
     public void setInitialBalance(BigDecimal initialBalance) {
         this.initialBalance = initialBalance;
+    }
+
+    public void setBankingPin(String bankingPin) {
+        this.bankingPin = bankingPin;
     }
 }
