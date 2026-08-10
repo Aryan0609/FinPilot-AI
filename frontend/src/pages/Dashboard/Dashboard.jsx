@@ -10,11 +10,8 @@ import {
   FaMinus,
   FaUniversity,
   FaChartLine,
-  FaShoppingBag,
-  FaUtensils,
-  FaMoneyBillWave,
   FaFileInvoiceDollar,
-  FaRobot,
+  FaEyeSlash,
 } from "react-icons/fa";
 
 import Layout from "../../layouts/Layout";
@@ -34,18 +31,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-
   const [user, setUser] = useState(null);
-
   const [account, setAccount] = useState(null);
-
   const [transactions, setTransactions] = useState([]);
-
   const [fds, setFds] = useState([]);
-
-  // =========================================================
-  // LOAD DASHBOARD
-  // =========================================================
 
   useEffect(() => {
     loadDashboard();
@@ -55,15 +44,8 @@ export default function Dashboard() {
     try {
       setLoading(true);
 
-      // -------------------------------------------------------
-      // CURRENT USER
-      // -------------------------------------------------------
-
-      const userResponse =
-        await authService.getCurrentUser();
-
-      const currentUser =
-        userResponse.data;
+      const userResponse = await authService.getCurrentUser();
+      const currentUser = userResponse.data;
 
       setUser(currentUser);
 
@@ -71,39 +53,20 @@ export default function Dashboard() {
         return;
       }
 
-      // -------------------------------------------------------
-      // ACCOUNT + TRANSACTIONS
-      // -------------------------------------------------------
+      const [accountResponse, transactionResponse] =
+        await Promise.all([
+          getAccount(currentUser.accountId),
+          getTransactions(currentUser.accountId),
+        ]);
 
-      const [
-        accountResponse,
-        transactionResponse,
-      ] = await Promise.all([
-        getAccount(currentUser.accountId),
-        getTransactions(currentUser.accountId),
-      ]);
-
-      setAccount(
-        accountResponse.data
-      );
-
-      setTransactions(
-        transactionResponse.data || []
-      );
-
-      // -------------------------------------------------------
-      // FIXED DEPOSITS
-      //
-      // Important:
-      // FD failure should NOT break the whole dashboard.
-      // -------------------------------------------------------
+      setAccount(accountResponse.data);
+      setTransactions(transactionResponse.data || []);
 
       if (currentUser?.userId) {
         try {
-          const fdResponse =
-            await fdService.getUserFDs(
-              currentUser.userId
-            );
+          const fdResponse = await fdService.getUserFDs(
+            currentUser.userId
+          );
 
           setFds(
             Array.isArray(fdResponse)
@@ -116,11 +79,9 @@ export default function Dashboard() {
             fdError
           );
 
-          // Keep dashboard working even if FD API fails.
           setFds([]);
         }
       }
-
     } catch (err) {
       console.error(
         "Dashboard loading failed:",
@@ -132,18 +93,14 @@ export default function Dashboard() {
   };
 
   // =========================================================
-  // HELPERS
+  // BASIC HELPERS
   // =========================================================
 
   const firstName =
-    user?.name?.trim()?.split(" ")[0] ||
-    "there";
+    user?.name?.trim()?.split(" ")[0] || "there";
 
   const formatMoney = (value) => {
-    const amount =
-      Number(value || 0);
-
-    return amount.toLocaleString(
+    return Number(value || 0).toLocaleString(
       "en-IN",
       {
         style: "currency",
@@ -165,9 +122,7 @@ export default function Dashboard() {
         0
     );
 
-  const getTransactionType = (
-    transaction
-  ) => {
+  const getTransactionType = (transaction) => {
     const raw = String(
       transaction?.transactionType ??
         transaction?.type ??
@@ -179,7 +134,10 @@ export default function Dashboard() {
       raw.includes("CREDIT") ||
       raw.includes("DEPOSIT") ||
       raw.includes("RECEIVED") ||
-      raw.includes("SALARY")
+      raw.includes("SALARY") ||
+      raw.includes("TRANSFER_IN") ||
+      raw.includes("FD_CLOSURE") ||
+      raw.includes("MF_REDEMPTION")
     ) {
       return "CREDIT";
     }
@@ -187,9 +145,7 @@ export default function Dashboard() {
     return "DEBIT";
   };
 
-  const getDescription = (
-    transaction
-  ) => {
+  const getDescription = (transaction) => {
     return (
       transaction?.description ||
       transaction?.remarks ||
@@ -201,9 +157,7 @@ export default function Dashboard() {
     );
   };
 
-  const getParty = (
-    transaction
-  ) => {
+  const getParty = (transaction) => {
     return (
       transaction?.recipientName ||
       transaction?.senderName ||
@@ -214,14 +168,28 @@ export default function Dashboard() {
     );
   };
 
-  const getCategory = (
-    transaction
-  ) => {
+  const getCategory = (transaction) => {
     const type = String(
       transaction?.transactionType ??
         transaction?.type ??
         ""
     ).toUpperCase();
+
+    if (
+      type.includes("FD_INVESTMENT") ||
+      type.includes("FD_CLOSURE")
+    ) {
+      return "Fixed Deposit";
+    }
+
+    if (
+      type.includes("MF_INVESTMENT") ||
+      type.includes("MF_REDEMPTION") ||
+      type.includes("MUTUAL") ||
+      type.includes("FUND")
+    ) {
+      return "Mutual Fund";
+    }
 
     if (
       type.includes("TRANSFER") ||
@@ -245,28 +213,10 @@ export default function Dashboard() {
       return "Banking";
     }
 
-    if (
-      type.includes("SALARY")
-    ) {
-      return "Salary";
-    }
-
-    if (
-      type.includes("MUTUAL") ||
-      type.includes("FUND")
-    ) {
-      return "Investment";
-    }
-
-    return (
-      transaction?.category ||
-      "Banking"
-    );
+    return transaction?.category || "Banking";
   };
 
-  const getDate = (
-    transaction
-  ) => {
+  const getDate = (transaction) => {
     const value =
       transaction?.transactionDate ??
       transaction?.createdAt ??
@@ -280,9 +230,7 @@ export default function Dashboard() {
     return formatDateTime(value);
   };
 
-  const getStatus = (
-    transaction
-  ) => {
+  const getStatus = (transaction) => {
     return String(
       transaction?.status ||
         transaction?.transactionStatus ||
@@ -294,140 +242,110 @@ export default function Dashboard() {
   // TRANSACTION TOTALS
   // =========================================================
 
-  const totalTransactionValue =
-    useMemo(() => {
-      return transactions.reduce(
-        (sum, transaction) =>
-          sum +
-          Math.abs(
-            getAmount(transaction)
-          ),
-        0
-      );
-    }, [transactions]);
+  const creditTotal = useMemo(() => {
+    return transactions.reduce(
+      (sum, transaction) => {
+        if (
+          getTransactionType(transaction) ===
+          "CREDIT"
+        ) {
+          return (
+            sum +
+            Math.abs(getAmount(transaction))
+          );
+        }
 
-  const creditTotal =
-    useMemo(() => {
-      return transactions.reduce(
-        (sum, transaction) => {
-          if (
-            getTransactionType(
-              transaction
-            ) === "CREDIT"
-          ) {
-            return (
-              sum +
-              Math.abs(
-                getAmount(transaction)
-              )
-            );
-          }
+        return sum;
+      },
+      0
+    );
+  }, [transactions]);
 
-          return sum;
-        },
-        0
-      );
-    }, [transactions]);
+  const debitTotal = useMemo(() => {
+    return transactions.reduce(
+      (sum, transaction) => {
+        if (
+          getTransactionType(transaction) ===
+          "DEBIT"
+        ) {
+          return (
+            sum +
+            Math.abs(getAmount(transaction))
+          );
+        }
 
-  const debitTotal =
-    useMemo(() => {
-      return transactions.reduce(
-        (sum, transaction) => {
-          if (
-            getTransactionType(
-              transaction
-            ) === "DEBIT"
-          ) {
-            return (
-              sum +
-              Math.abs(
-                getAmount(transaction)
-              )
-            );
-          }
-
-          return sum;
-        },
-        0
-      );
-    }, [transactions]);
+        return sum;
+      },
+      0
+    );
+  }, [transactions]);
 
   const recentTransactions =
     transactions.slice(0, 6);
 
   // =========================================================
-  // FD CALCULATIONS
+  // FIXED DEPOSITS
   // =========================================================
 
-  const activeFDs =
-    useMemo(() => {
-      return fds.filter(
-        (fd) =>
-          String(fd?.status)
-            .toUpperCase() ===
-          "ACTIVE"
-      );
-    }, [fds]);
+  const activeFDs = useMemo(() => {
+    return fds.filter(
+      (fd) =>
+        String(fd?.status).toUpperCase() ===
+        "ACTIVE"
+    );
+  }, [fds]);
 
-  const fdTotalInvested =
-    useMemo(() => {
-      return activeFDs.reduce(
-        (sum, fd) =>
-          sum +
-          Number(
-            fd?.principalAmount || 0
-          ),
-        0
-      );
-    }, [activeFDs]);
+  const fdTotalInvested = useMemo(() => {
+    return activeFDs.reduce(
+      (sum, fd) =>
+        sum +
+        Number(fd?.principalAmount || 0),
+      0
+    );
+  }, [activeFDs]);
 
-  const fdMaturityValue =
-    useMemo(() => {
-      return activeFDs.reduce(
-        (sum, fd) =>
-          sum +
-          Number(
-            fd?.maturityAmount || 0
-          ),
-        0
-      );
-    }, [activeFDs]);
+  const fdMaturityValue = useMemo(() => {
+    return activeFDs.reduce(
+      (sum, fd) =>
+        sum +
+        Number(fd?.maturityAmount || 0),
+      0
+    );
+  }, [activeFDs]);
 
   const fdExpectedInterest =
     fdMaturityValue -
     fdTotalInvested;
 
   // =========================================================
+  // MUTUAL FUND PLACEHOLDER
+  //
+  // We are deliberately not inventing portfolio numbers.
+  // Backend portfolio data will be connected separately.
+  // =========================================================
+
+  const mutualFundInvested = 0;
+  const mutualFundCurrentValue = 0;
+  const mutualFundGain =
+    mutualFundCurrentValue -
+    mutualFundInvested;
+
+  // =========================================================
   // CATEGORY ICON
   // =========================================================
 
-  const getCategoryIcon = (
-    category
-  ) => {
+  const getCategoryIcon = (category) => {
     const value =
       String(category).toLowerCase();
 
     if (
-      value.includes("shopping")
+      value.includes("fixed")
     ) {
-      return <FaShoppingBag />;
+      return <FaUniversity />;
     }
 
     if (
-      value.includes("food") ||
-      value.includes("dining")
-    ) {
-      return <FaUtensils />;
-    }
-
-    if (
-      value.includes("salary")
-    ) {
-      return <FaMoneyBillWave />;
-    }
-
-    if (
-      value.includes("investment")
+      value.includes("mutual")
     ) {
       return <FaChartLine />;
     }
@@ -449,17 +367,13 @@ export default function Dashboard() {
     return (
       <Layout>
         <div className="flex min-h-[75vh] items-center justify-center bg-[#050505] text-white">
-
           <div className="text-center">
-
             <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-2 border-zinc-800 border-t-violet-500" />
 
             <p className="text-sm text-zinc-500">
               Loading your dashboard...
             </p>
-
           </div>
-
         </div>
       </Layout>
     );
@@ -471,17 +385,15 @@ export default function Dashboard() {
 
   return (
     <Layout>
-
       <div className="min-h-full bg-[#050505] text-white">
 
-        {/* =====================================================
+        {/* ===================================================
             HEADER
-        ===================================================== */}
+        =================================================== */}
 
         <section className="mb-8 flex flex-col gap-5 border-b border-zinc-900 pb-7 sm:flex-row sm:items-center sm:justify-between">
 
           <div>
-
             <p className="mb-2 text-xs font-medium uppercase tracking-[3px] text-violet-400">
               Financial Overview
             </p>
@@ -493,7 +405,6 @@ export default function Dashboard() {
             <p className="mt-2 text-sm text-zinc-500">
               Here's what's happening with your money.
             </p>
-
           </div>
 
           <button
@@ -502,7 +413,6 @@ export default function Dashboard() {
             }
             className="flex w-fit items-center gap-3 rounded-full border border-zinc-800 bg-zinc-950 px-4 py-2.5 transition hover:border-violet-700 hover:bg-zinc-900"
           >
-
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 font-semibold">
               {firstName
                 .charAt(0)
@@ -510,7 +420,6 @@ export default function Dashboard() {
             </div>
 
             <div className="text-left">
-
               <p className="text-xs text-zinc-500">
                 Account
               </p>
@@ -518,256 +427,288 @@ export default function Dashboard() {
               <p className="text-sm font-medium text-zinc-200">
                 {user?.name || "User"}
               </p>
-
             </div>
-
           </button>
-
         </section>
 
-        {/* =====================================================
-            TOP GRID
-        ===================================================== */}
+        {/* ===================================================
+            MAIN GRID
+        =================================================== */}
 
         <div className="grid gap-5 xl:grid-cols-[1.55fr_1fr]">
 
-          {/* ===================================================
+          {/* =================================================
               YOUR INVESTMENTS
-          =================================================== */}
+          ================================================= */}
 
           <section className="rounded-3xl border border-zinc-800 bg-[#080808] p-5 shadow-2xl sm:p-6">
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
 
-              <div className="flex items-start gap-3">
-
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
-                  <FaChartLine />
-                </div>
-
-                <div>
-
-                  <p className="text-xs font-medium uppercase tracking-[2px] text-violet-400">
-                    Investments
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-semibold">
-                    Your Investments
-                  </h2>
-
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Track your mutual funds and fixed deposits.
-                  </p>
-
-                </div>
-
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                <FaChartLine />
               </div>
 
-            </div>
-
-            {/* =================================================
-                ACCOUNT METRICS
-            ================================================= */}
-
-            <div className="mt-6 grid grid-cols-1 divide-y divide-zinc-800 rounded-2xl border border-zinc-800 bg-zinc-950 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-
-              <div className="p-4">
-
-                <p className="text-xs text-zinc-500">
-                  Available Balance
-                </p>
-
-                <p className="mt-2 text-xl font-semibold">
-                  {formatMoney(
-                    account?.balance
-                  )}
-                </p>
-
-              </div>
-
-              <div className="p-4">
-
-                <p className="text-xs text-zinc-500">
-                  Credit Volume
-                </p>
-
-                <p className="mt-2 text-xl font-semibold text-emerald-400">
-                  +
-                  {formatMoney(
-                    creditTotal
-                  )}
-                </p>
-
-              </div>
-
-              <div className="p-4">
-
-                <p className="text-xs text-zinc-500">
-                  Debit Volume
-                </p>
-
-                <p className="mt-2 text-xl font-semibold text-red-400">
-                  -
-                  {formatMoney(
-                    debitTotal
-                  )}
-                </p>
-
-              </div>
-
-            </div>
-
-            {/* =================================================
-                MUTUAL FUNDS
-            ================================================= */}
-
-            <div className="mt-5 rounded-2xl border border-zinc-800 bg-[#050505] p-5">
-
-              <div className="flex items-start justify-between gap-4">
-
-                <div className="flex items-center gap-3">
-
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
-                    <FaChartLine />
-                  </div>
-
-                  <div>
-
-                    <p className="font-medium">
-                      Mutual Funds
-                    </p>
-
-                    <p className="mt-1 text-xs text-zinc-600">
-                      View your live holdings, units and NAV.
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <span className="rounded-full bg-violet-500/10 px-3 py-1 text-xs text-violet-400">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[2px] text-violet-400">
                   Investments
-                </span>
+                </p>
+
+                <h2 className="mt-1 text-xl font-semibold">
+                  Your Investments
+                </h2>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Track your mutual funds and fixed deposits.
+                </p>
+              </div>
+            </div>
+
+            {/* =================================================
+                INVESTMENT SUMMARY
+            ================================================= */}
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+
+              {/* MUTUAL FUNDS */}
+
+              <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.03] p-5">
+
+                <div className="flex items-center justify-between">
+
+                  <div className="flex items-center gap-3">
+
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                      <FaChartLine />
+                    </div>
+
+                    <div>
+                      <p className="font-medium">
+                        Mutual Funds
+                      </p>
+
+                      <p className="text-xs text-zinc-600">
+                        Your portfolio
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <span className="rounded-full bg-violet-500/10 px-3 py-1 text-[10px] font-medium text-violet-400">
+                    Investments
+                  </span>
+
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-2">
+
+                  <div>
+                    <p className="text-[11px] text-zinc-600">
+                      Invested
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold">
+                      {formatMoney(
+                        mutualFundInvested
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] text-zinc-600">
+                      Current Value
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold">
+                      {formatMoney(
+                        mutualFundCurrentValue
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] text-zinc-600">
+                      Gain
+                    </p>
+
+                    <p
+                      className={`mt-1 text-sm font-semibold ${
+                        mutualFundGain >= 0
+                          ? "text-emerald-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {mutualFundGain >= 0
+                        ? "+"
+                        : "-"}
+                      {formatMoney(
+                        Math.abs(
+                          mutualFundGain
+                        )
+                      )}
+                    </p>
+                  </div>
+
+                </div>
+
+                <button
+                  onClick={() =>
+                    navigate("/mutual-funds")
+                  }
+                  className="mt-5 w-full rounded-xl border border-zinc-800 py-3 text-sm text-zinc-400 transition hover:border-violet-700 hover:bg-violet-500/5 hover:text-white"
+                >
+                  View mutual funds →
+                </button>
 
               </div>
 
-              <button
-                onClick={() =>
-                  navigate("/mutual-funds")
-                }
-                className="mt-5 w-full rounded-xl border border-zinc-800 py-3 text-sm text-zinc-400 transition hover:border-violet-700 hover:bg-violet-500/5 hover:text-white"
-              >
-                Explore mutual funds →
-              </button>
+              {/* FIXED DEPOSITS */}
+
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] p-5">
+
+                <div className="flex items-center justify-between">
+
+                  <div className="flex items-center gap-3">
+
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                      <FaUniversity />
+                    </div>
+
+                    <div>
+                      <p className="font-medium">
+                        Fixed Deposits
+                      </p>
+
+                      <p className="text-xs text-zinc-600">
+                        {activeFDs.length} active
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-medium text-emerald-400">
+                    Secure
+                  </span>
+
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-2">
+
+                  <div>
+                    <p className="text-[11px] text-zinc-600">
+                      Invested
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold">
+                      {formatMoney(
+                        fdTotalInvested
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] text-zinc-600">
+                      Maturity
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold">
+                      {formatMoney(
+                        fdMaturityValue
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] text-zinc-600">
+                      Interest
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold text-emerald-400">
+                      +
+                      {formatMoney(
+                        fdExpectedInterest
+                      )}
+                    </p>
+                  </div>
+
+                </div>
+
+                <button
+                  onClick={() =>
+                    navigate("/fixed-deposits")
+                  }
+                  className="mt-5 w-full rounded-xl border border-zinc-800 py-3 text-sm text-zinc-400 transition hover:border-emerald-700 hover:bg-emerald-500/5 hover:text-white"
+                >
+                  View fixed deposits →
+                </button>
+
+              </div>
 
             </div>
 
             {/* =================================================
-                FIXED DEPOSITS
+                INVESTMENT CASH FLOW
             ================================================= */}
 
-            <div className="mt-4 rounded-2xl border border-zinc-800 bg-[#050505] p-5">
+            <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950">
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="grid grid-cols-1 divide-y divide-zinc-800 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
 
-                <div className="flex items-center gap-3">
+                <div className="p-5">
 
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
-                    <FaUniversity />
-                  </div>
-
-                  <div>
-
-                    <p className="font-medium">
-                      Fixed Deposits
-                    </p>
-
-                    <p className="mt-1 text-xs text-zinc-600">
-                      Secure investments with guaranteed maturity value.
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <span className="w-fit rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
-                  {activeFDs.length} Active
-                </span>
-
-              </div>
-
-              {/* FD METRICS */}
-
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-
-                  <p className="text-xs text-zinc-600">
-                    Total Invested
+                  <p className="text-xs uppercase tracking-wider text-emerald-400">
+                    Invested / Received
                   </p>
 
-                  <p className="mt-2 text-lg font-semibold">
+                  <p className="mt-2 text-xl font-semibold text-emerald-400">
+                    +
                     {formatMoney(
-                      fdTotalInvested
+                      creditTotal
                     )}
+                  </p>
+
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Money credited to your account
                   </p>
 
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                <div className="p-5">
 
-                  <p className="text-xs text-zinc-600">
-                    Maturity Value
+                  <p className="text-xs uppercase tracking-wider text-red-400">
+                    Debit Volume
                   </p>
 
-                  <p className="mt-2 text-lg font-semibold">
+                  <p className="mt-2 text-xl font-semibold text-red-400">
+                    -
                     {formatMoney(
-                      fdMaturityValue
+                      debitTotal
                     )}
                   </p>
 
-                </div>
-
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-
-                  <p className="text-xs text-zinc-600">
-                    Expected Interest
-                  </p>
-
-                  <p className="mt-2 text-lg font-semibold text-emerald-400">
-                    {formatMoney(
-                      fdExpectedInterest
-                    )}
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Money leaving your account
                   </p>
 
                 </div>
 
               </div>
-
-              <button
-                onClick={() =>
-                  navigate("/fixed-deposits")
-                }
-                className="mt-5 w-full rounded-xl border border-zinc-800 py-3 text-sm text-zinc-400 transition hover:border-emerald-700 hover:bg-emerald-500/5 hover:text-white"
-              >
-                View fixed deposits →
-              </button>
 
             </div>
 
           </section>
 
-          {/* ===================================================
+          {/* =================================================
               RIGHT SIDE
-          =================================================== */}
+          ================================================= */}
 
           <div className="space-y-5">
 
             {/* ACCOUNT STATS */}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
 
-              {/* BALANCE */}
+              {/* BALANCE MASKED */}
 
               <div className="rounded-3xl border border-zinc-800 bg-[#080808] p-5">
 
@@ -778,76 +719,46 @@ export default function Dashboard() {
                   </p>
 
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
-                    <FaWallet />
+                    <FaEyeSlash />
                   </div>
 
                 </div>
 
-                <p className="mt-5 text-2xl font-semibold">
-                  {formatMoney(
-                    account?.balance
-                  )}
+                <p className="mt-5 text-2xl font-semibold tracking-widest text-zinc-500">
+                  ••••••••
                 </p>
 
                 <p className="mt-1 text-xs text-zinc-600">
-                  Account ending in{" "}
-                  {account?.accountNumber
-                    ? account.accountNumber.slice(-4)
-                    : "----"}
+                  Enter banking PIN to view balance
                 </p>
 
               </div>
 
-              {/* TRANSACTION VOLUME */}
+              {/* DEBIT VOLUME */}
 
-              <div className="rounded-3xl border border-zinc-800 bg-[#080808] p-5">
+              <div className="rounded-3xl border border-red-500/10 bg-[#080808] p-5">
 
                 <div className="flex items-center justify-between">
 
                   <p className="text-sm text-zinc-400">
-                    Transaction Volume
+                    Debit Volume
                   </p>
 
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
                     <FaArrowUp />
                   </div>
 
                 </div>
 
-                <p className="mt-5 text-2xl font-semibold">
+                <p className="mt-5 text-2xl font-semibold text-red-400">
+                  -
                   {formatMoney(
-                    totalTransactionValue
+                    debitTotal
                   )}
                 </p>
 
                 <p className="mt-1 text-xs text-zinc-600">
-                  Across recent activity
-                </p>
-
-              </div>
-
-              {/* TRANSACTIONS */}
-
-              <div className="rounded-3xl border border-zinc-800 bg-[#080808] p-5">
-
-                <div className="flex items-center justify-between">
-
-                  <p className="text-sm text-zinc-400">
-                    Total Transactions
-                  </p>
-
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
-                    <FaExchangeAlt />
-                  </div>
-
-                </div>
-
-                <p className="mt-5 text-2xl font-semibold">
-                  {transactions.length}
-                </p>
-
-                <p className="mt-1 text-xs text-zinc-600">
-                  Recorded transactions
+                  Across account activity
                 </p>
 
               </div>
@@ -927,9 +838,9 @@ export default function Dashboard() {
 
         </div>
 
-        {/* =====================================================
+        {/* ===================================================
             RECENT TRANSACTIONS
-        ===================================================== */}
+        =================================================== */}
 
         <section className="mt-5 overflow-hidden rounded-3xl border border-zinc-800 bg-[#080808] shadow-2xl">
 
@@ -970,14 +881,11 @@ export default function Dashboard() {
 
           </div>
 
-          {/* DESKTOP */}
-
           <div className="hidden overflow-x-auto md:block">
 
             <table className="w-full min-w-[850px]">
 
               <thead>
-
                 <tr className="border-b border-zinc-800 bg-zinc-950/70 text-left text-[11px] uppercase tracking-wider text-zinc-600">
 
                   <th className="px-6 py-4">
@@ -1005,7 +913,6 @@ export default function Dashboard() {
                   </th>
 
                 </tr>
-
               </thead>
 
               <tbody>
@@ -1013,14 +920,12 @@ export default function Dashboard() {
                 {recentTransactions.length === 0 ? (
 
                   <tr>
-
                     <td
                       colSpan="6"
                       className="px-6 py-14 text-center text-sm text-zinc-600"
                     >
                       No transactions found.
                     </td>
-
                   </tr>
 
                 ) : (
@@ -1102,7 +1007,6 @@ export default function Dashboard() {
                                   : "bg-red-500/10 text-red-400"
                               }`}
                             >
-
                               {isCredit ? (
                                 <FaArrowDown />
                               ) : (
@@ -1112,7 +1016,6 @@ export default function Dashboard() {
                               {isCredit
                                 ? "Credit"
                                 : "Debit"}
-
                             </span>
 
                           </td>
@@ -1153,15 +1056,12 @@ export default function Dashboard() {
 
                             <span
                               className={`rounded-lg px-2.5 py-1.5 text-xs font-medium ${
-                                status ===
-                                  "SUCCESS" ||
-                                status ===
-                                  "COMPLETED"
+                                status === "SUCCESS" ||
+                                status === "COMPLETED"
                                   ? "bg-emerald-500/10 text-emerald-400"
-                                  : status ===
-                                    "PENDING"
-                                    ? "bg-amber-500/10 text-amber-400"
-                                    : "bg-red-500/10 text-red-400"
+                                  : status === "PENDING"
+                                  ? "bg-amber-500/10 text-amber-400"
+                                  : "bg-red-500/10 text-red-400"
                               }`}
                             >
                               {status}
@@ -1173,7 +1073,6 @@ export default function Dashboard() {
                       );
                     }
                   )
-
                 )}
 
               </tbody>
@@ -1214,11 +1113,6 @@ export default function Dashboard() {
                       transaction
                     );
 
-                  const party =
-                    getParty(
-                      transaction
-                    );
-
                   const category =
                     getCategory(
                       transaction
@@ -1248,13 +1142,11 @@ export default function Dashboard() {
                                 : "bg-red-500/10 text-red-400"
                             }`}
                           >
-
                             {isCredit ? (
                               <FaArrowDown />
                             ) : (
                               <FaArrowUp />
                             )}
-
                           </div>
 
                           <div className="min-w-0">
@@ -1262,12 +1154,6 @@ export default function Dashboard() {
                             <p className="truncate text-sm font-medium text-zinc-200">
                               {description}
                             </p>
-
-                            {party && (
-                              <p className="truncate text-xs text-zinc-600">
-                                {party}
-                              </p>
-                            )}
 
                           </div>
 
@@ -1313,7 +1199,6 @@ export default function Dashboard() {
                   );
                 }
               )
-
             )}
 
           </div>
@@ -1334,7 +1219,6 @@ export default function Dashboard() {
         </section>
 
       </div>
-
     </Layout>
   );
 }

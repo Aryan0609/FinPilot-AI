@@ -8,9 +8,14 @@ import com.finpilot.banking.dto.MutualFundResponse;
 import com.finpilot.banking.entity.Account;
 import com.finpilot.banking.entity.Investment;
 import com.finpilot.banking.entity.MutualFund;
+import com.finpilot.banking.entity.Transaction;
+import com.finpilot.banking.entity.TransactionStatus;
+import com.finpilot.banking.entity.TransactionType;
 import com.finpilot.banking.repository.AccountRepository;
 import com.finpilot.banking.repository.InvestmentRepository;
 import com.finpilot.banking.repository.MutualFundRepository;
+import com.finpilot.banking.repository.TransactionRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -33,9 +39,18 @@ public class MutualFundServiceImpl implements MutualFundService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+
+    // =========================================================
+    // UPDATE NAV
+    // =========================================================
+
     private void updateNavs() {
 
-        List<MutualFund> funds = mutualFundRepository.findAll();
+        List<MutualFund> funds =
+                mutualFundRepository.findAll();
 
         for (MutualFund fund : funds) {
 
@@ -53,22 +68,29 @@ public class MutualFundServiceImpl implements MutualFundService {
                             fund.getNav().doubleValue() + change
                     );
 
-            fund.setNav(BigDecimal.valueOf(newNav));
-
+            fund.setNav(
+                    BigDecimal.valueOf(newNav)
+            );
         }
 
         mutualFundRepository.saveAll(funds);
-
     }
+
+
+    // =========================================================
+    // GET ALL FUNDS
+    // =========================================================
 
     @Override
     public List<MutualFundResponse> getAllFunds() {
 
         updateNavs();
 
-        List<MutualFundResponse> response = new ArrayList<>();
+        List<MutualFundResponse> response =
+                new ArrayList<>();
 
-        for (MutualFund fund : mutualFundRepository.findAll()) {
+        for (MutualFund fund :
+                mutualFundRepository.findAll()) {
 
             MutualFundResponse dto =
                     new MutualFundResponse();
@@ -81,117 +103,199 @@ public class MutualFundServiceImpl implements MutualFundService {
             dto.setAnnualReturn(fund.getAnnualReturn());
 
             response.add(dto);
-
         }
 
         return response;
-
     }
+
+
+    // =========================================================
+    // BUY MUTUAL FUND
+    // =========================================================
 
     @Override
     @Transactional
-    public InvestmentResponse buyFund(Long accountId,
-                                      MutualFundRequest request) {
+    public InvestmentResponse buyFund(
+            Long accountId,
+            MutualFundRequest request) {
 
         updateNavs();
 
-        System.out.println("=========== BUY REQUEST ===========");
-System.out.println("Received Account ID = " + accountId);
-
-System.out.println("Accounts in DB:");
-
-accountRepository.findAll().forEach(a ->
-        System.out.println(
-                a.getId() + "  "
-                        + a.getAccountNumber()
-        )
-);
-
-Account account =
-        accountRepository.findById(accountId)
-                .orElse(null);
-
-System.out.println("Account Object = " + account);
-
-if (account == null) {
-    throw new ResourceNotFoundException("Account not found");
-}
+        Account account =
+                accountRepository.findById(accountId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Account not found"
+                                )
+                        );
 
         MutualFund fund =
-                mutualFundRepository.findById(request.getFundId())
+                mutualFundRepository.findById(
+                                request.getFundId()
+                        )
                         .orElseThrow(() ->
-                                new RuntimeException("Fund not found"));
+                                new ResourceNotFoundException(
+                                        "Fund not found"
+                                )
+                        );
 
-        if (request.getAmount()
-                .compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.getAmount() == null ||
+                request.getAmount()
+                        .compareTo(BigDecimal.ZERO) <= 0) {
 
-            throw new BadRequestException("Invalid amount");
-
+            throw new BadRequestException(
+                    "Invalid investment amount"
+            );
         }
 
         if (account.getBalance()
                 .compareTo(request.getAmount()) < 0) {
 
-            throw new BadRequestException("Insufficient balance");
-
+            throw new BadRequestException(
+                    "Insufficient balance"
+            );
         }
+
+
+        // ---------------------------------------------------------
+        // DEBIT ACCOUNT
+        // ---------------------------------------------------------
+
+        BigDecimal investmentAmount =
+                request.getAmount();
 
         account.setBalance(
                 account.getBalance()
-                        .subtract(request.getAmount())
+                        .subtract(investmentAmount)
         );
 
         accountRepository.save(account);
 
+
+        // ---------------------------------------------------------
+        // CALCULATE UNITS
+        // ---------------------------------------------------------
+
         BigDecimal units =
-                request.getAmount()
-                        .divide(
-                                fund.getNav(),
-                                4,
-                                RoundingMode.HALF_UP
-                        );
+                investmentAmount.divide(
+                        fund.getNav(),
+                        4,
+                        RoundingMode.HALF_UP
+                );
+
+
+        // ---------------------------------------------------------
+        // CREATE INVESTMENT
+        // ---------------------------------------------------------
 
         Investment investment =
                 new Investment();
 
         investment.setAccount(account);
         investment.setMutualFund(fund);
-        investment.setInvestmentAmount(request.getAmount());
+        investment.setInvestmentAmount(
+                investmentAmount
+        );
         investment.setUnitsPurchased(units);
-        investment.setPurchaseNav(fund.getNav());
+        investment.setPurchaseNav(
+                fund.getNav()
+        );
 
-        investmentRepository.save(investment);
+        Investment savedInvestment =
+                investmentRepository.save(investment);
 
-        return mapInvestment(investment);
 
+        // ---------------------------------------------------------
+        // CREATE TRANSACTION
+        // ---------------------------------------------------------
+
+        Transaction transaction =
+                new Transaction();
+
+        transaction.setAccount(account);
+
+        // Negative because money left wallet
+        transaction.setAmount(
+                investmentAmount.negate()
+        );
+
+        transaction.setTransactionType(
+                TransactionType.MF_INVESTMENT
+        );
+
+        transaction.setStatus(
+                TransactionStatus.SUCCESS
+        );
+
+        transaction.setDescription(
+                "Mutual Fund investment - "
+                        + fund.getFundName()
+                        + " #"
+                        + savedInvestment.getId()
+        );
+
+        transaction.setReferenceNumber(
+                "MF-INV-"
+                        + savedInvestment.getId()
+                        + "-"
+                        + UUID.randomUUID()
+                                .toString()
+                                .substring(0, 8)
+        );
+
+        transactionRepository.save(transaction);
+
+
+        return mapInvestment(savedInvestment);
     }
-        @Override
+
+
+    // =========================================================
+    // SELL MUTUAL FUND
+    // =========================================================
+
+    @Override
     @Transactional
-    public InvestmentResponse sellFund(Long investmentId,
-                                       Double units) {
+    public InvestmentResponse sellFund(
+            Long investmentId,
+            Double units) {
 
         updateNavs();
 
         Investment investment =
-                investmentRepository.findById(investmentId)
+                investmentRepository.findById(
+                                investmentId
+                        )
                         .orElseThrow(() ->
-                                new RuntimeException("Investment not found"));
+                                new ResourceNotFoundException(
+                                        "Investment not found"
+                                )
+                        );
+
+        if (units == null) {
+            throw new BadRequestException(
+                    "Invalid units"
+            );
+        }
 
         BigDecimal sellUnits =
                 BigDecimal.valueOf(units);
 
         if (sellUnits.compareTo(BigDecimal.ZERO) <= 0) {
 
-            throw new RuntimeException("Invalid units");
-
+            throw new BadRequestException(
+                    "Invalid units"
+            );
         }
 
         if (investment.getUnitsPurchased()
                 .compareTo(sellUnits) < 0) {
 
-            throw new RuntimeException("Not enough units");
-
+            throw new BadRequestException(
+                    "Not enough units"
+            );
         }
+
 
         MutualFund fund =
                 investment.getMutualFund();
@@ -199,66 +303,151 @@ if (account == null) {
         Account account =
                 investment.getAccount();
 
+
+        // ---------------------------------------------------------
+        // CALCULATE REDEMPTION VALUE
+        // ---------------------------------------------------------
+
         BigDecimal sellAmount =
-                sellUnits.multiply(fund.getNav());
+                sellUnits.multiply(
+                        fund.getNav()
+                );
+
+
+        // ---------------------------------------------------------
+        // CREDIT ACCOUNT
+        // ---------------------------------------------------------
 
         account.setBalance(
-                account.getBalance().add(sellAmount)
+                account.getBalance()
+                        .add(sellAmount)
         );
 
         accountRepository.save(account);
+
+
+        // ---------------------------------------------------------
+        // UPDATE INVESTMENT
+        // ---------------------------------------------------------
 
         BigDecimal remainingUnits =
                 investment.getUnitsPurchased()
                         .subtract(sellUnits);
 
-        if (remainingUnits.compareTo(BigDecimal.ZERO) == 0) {
 
-            investmentRepository.delete(investment);
+        // ---------------------------------------------------------
+        // CREATE TRANSACTION BEFORE DELETE
+        // ---------------------------------------------------------
+
+        Transaction transaction =
+                new Transaction();
+
+        transaction.setAccount(account);
+
+        // Positive because money returned to wallet
+        transaction.setAmount(
+                sellAmount
+        );
+
+        transaction.setTransactionType(
+                TransactionType.MF_REDEMPTION
+        );
+
+        transaction.setStatus(
+                TransactionStatus.SUCCESS
+        );
+
+        transaction.setDescription(
+                "Mutual Fund redemption - "
+                        + fund.getFundName()
+                        + " #"
+                        + investment.getId()
+        );
+
+        transaction.setReferenceNumber(
+                "MF-SELL-"
+                        + investment.getId()
+                        + "-"
+                        + UUID.randomUUID()
+                                .toString()
+                                .substring(0, 8)
+        );
+
+        transactionRepository.save(transaction);
+
+
+        // ---------------------------------------------------------
+        // REMOVE / UPDATE INVESTMENT
+        // ---------------------------------------------------------
+
+        if (remainingUnits.compareTo(
+                BigDecimal.ZERO) == 0) {
+
+            investmentRepository.delete(
+                    investment
+            );
 
         } else {
 
-            investment.setUnitsPurchased(remainingUnits);
+            investment.setUnitsPurchased(
+                    remainingUnits
+            );
 
             investment.setInvestmentAmount(
-
                     remainingUnits.multiply(
                             investment.getPurchaseNav()
                     )
-
             );
 
-            investmentRepository.save(investment);
-
+            investmentRepository.save(
+                    investment
+            );
         }
 
-        return mapInvestment(investment);
 
+        return mapInvestment(investment);
     }
 
+
+    // =========================================================
+    // GET PORTFOLIO
+    // =========================================================
+
     @Override
-    public List<InvestmentResponse> getPortfolio(Long accountId) {
+    public List<InvestmentResponse> getPortfolio(
+            Long accountId) {
 
         Account account =
                 accountRepository.findById(accountId)
                         .orElseThrow(() ->
-                                new RuntimeException("Account not found"));
+                                new ResourceNotFoundException(
+                                        "Account not found"
+                                )
+                        );
 
         List<Investment> investments =
-                investmentRepository.findByAccount(account);
+                investmentRepository.findByAccount(
+                        account
+                );
 
         List<InvestmentResponse> response =
                 new ArrayList<>();
 
-        for (Investment investment : investments) {
+        for (Investment investment :
+                investments) {
 
-            response.add(mapInvestment(investment));
-
+            response.add(
+                    mapInvestment(investment)
+            );
         }
 
         return response;
-
     }
+
+
+    // =========================================================
+    // MAP INVESTMENT
+    // =========================================================
 
     private InvestmentResponse mapInvestment(
             Investment investment) {
@@ -267,36 +456,43 @@ if (account == null) {
                 new InvestmentResponse();
 
         dto.setInvestmentId(
-                investment.getId());
+                investment.getId()
+        );
 
         dto.setFundName(
                 investment.getMutualFund()
-                        .getFundName());
+                        .getFundName()
+        );
 
         dto.setInvestedAmount(
-                investment.getInvestmentAmount());
+                investment.getInvestmentAmount()
+        );
 
         dto.setUnits(
-                investment.getUnitsPurchased());
+                investment.getUnitsPurchased()
+        );
 
         dto.setPurchaseNav(
-                investment.getPurchaseNav());
+                investment.getPurchaseNav()
+        );
 
         dto.setCurrentNav(
                 investment.getMutualFund()
-                        .getNav());
+                        .getNav()
+        );
 
         dto.setCurrentValue(
-                investment.getCurrentValue());
+                investment.getCurrentValue()
+        );
 
         dto.setProfitLoss(
-                investment.getProfitLoss());
+                investment.getProfitLoss()
+        );
 
         dto.setInvestmentDate(
-                investment.getInvestmentDate());
+                investment.getInvestmentDate()
+        );
 
         return dto;
-
     }
-
 }

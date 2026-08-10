@@ -6,5 +6,7 @@ public enum TransactionType {
     TRANSFER_IN,
     TRANSFER_OUT,
     FD_INVESTMENT,
-    FD_CLOSURE
+    FD_CLOSURE,
+    MF_INVESTMENT,
+    MF_REDEMPTION
 }
