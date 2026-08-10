@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
-@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/accounts")
 public class AccountController {
