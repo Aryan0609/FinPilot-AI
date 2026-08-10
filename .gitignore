@@ -46,3 +46,4 @@ target/
 
 # Database dumps
 database/**/*_backup.sql
+database/backups/
