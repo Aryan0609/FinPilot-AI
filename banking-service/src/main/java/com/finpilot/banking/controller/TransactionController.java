@@ -33,6 +33,7 @@ public class TransactionController {
                         request.getAccountId(),
                         request.getAmount(),
                         request.getDescription(),
+                        request.getBankingPin(),
                         authentication.getName()
                 )
         );
@@ -48,6 +49,7 @@ public class TransactionController {
                         request.getAccountId(),
                         request.getAmount(),
                         request.getDescription(),
+                        request.getBankingPin(),
                         authentication.getName()
                 )
         );
@@ -63,6 +65,7 @@ public class TransactionController {
                         request.getToAccountNumber(),
                         request.getAmount(),
                         request.getDescription(),
+                        request.getBankingPin(),
                         authentication.getName()
                 )
         );

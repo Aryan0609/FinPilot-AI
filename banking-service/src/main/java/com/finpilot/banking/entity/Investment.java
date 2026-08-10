@@ -38,7 +38,9 @@ public class Investment {
 
     @PrePersist
     public void onCreate() {
-        investmentDate = LocalDateTime.now();
+        if (investmentDate == null) {
+            investmentDate = LocalDateTime.now();
+        }
     }
 
     @Transient

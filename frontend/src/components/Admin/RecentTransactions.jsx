@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRecentTransactions } from "../../services/adminService";
 
+import { formatDateTime } from "../../utils/formatters";
 export default function RecentTransactions() {
 
     const [transactions, setTransactions] = useState([]);
@@ -41,7 +42,7 @@ export default function RecentTransactions() {
                             </p>
 
                             <p className="text-sm text-gray-400">
-                                {new Date(tx.transactionDate).toLocaleString()}
+                                {formatDateTime(tx.transactionDate)}
                             </p>
 
                         </div>

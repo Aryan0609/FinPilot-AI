@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 
 public class CreateFDRequest {
 
+    private String bankingPin;
+
     private Long accountId;
 
     private BigDecimal amount;
@@ -35,5 +37,13 @@ public class CreateFDRequest {
 
     public void setTenureMonths(Integer tenureMonths) {
         this.tenureMonths = tenureMonths;
+    }
+
+    public String getBankingPin() {
+        return bankingPin;
+    }
+
+    public void setBankingPin(String bankingPin) {
+        this.bankingPin = bankingPin;
     }
 }

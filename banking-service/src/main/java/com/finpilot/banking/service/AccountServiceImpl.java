@@ -17,69 +17,77 @@ public class AccountServiceImpl implements AccountService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
 
-    @Override
-public DashboardResponse getDashboard(User user) {
+    public AccountServiceImpl(
+            AccountRepository accountRepository,
+            TransactionRepository transactionRepository) {
 
-    Account account = accountRepository.findByUser(user)
-            .orElseThrow(() -> new RuntimeException("Account not found"));
-
-    DashboardResponse response = new DashboardResponse();
-
-    response.setAccountNumber(account.getAccountNumber());
-    response.setAccountType(account.getAccountType());
-    response.setBalance(account.getBalance());
-
-    List<TransactionResponse> transactions =
-            transactionRepository
-                    .findTop5ByAccountIdOrderByCreatedAtDesc(account.getId())
-                    .stream()
-                    .map(tx -> {
-
-                        TransactionResponse dto = new TransactionResponse();
-
-                        dto.setTransactionId(tx.getId());
-                        dto.setReferenceNumber(tx.getReferenceNumber());
-                        dto.setTransactionType(tx.getTransactionType().name());
-                        dto.setStatus(tx.getStatus().name());
-                        dto.setAmount(tx.getAmount());
-                        dto.setDescription(tx.getDescription());
-                        dto.setCreatedAt(tx.getCreatedAt());
-
-                        return dto;
-
-                    }).toList();
-
-    response.setRecentTransactions(transactions);
-
-    return response;
-}
-
-    public AccountServiceImpl(AccountRepository accountRepository,
-                          TransactionRepository transactionRepository) {
-
-    this.accountRepository = accountRepository;
-    this.transactionRepository = transactionRepository;
-}
-
-  
-
-    @Override
-    public Account createAccount(Account account) {
-        return accountRepository.save(account);
+        this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
-    public Account getAccount(Long id) {
-        return accountRepository.findById(id).orElse(null);
+    public DashboardResponse getDashboard(User user) {
+
+        Account account = accountRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found"));
+
+        DashboardResponse response = new DashboardResponse();
+
+        response.setAccountNumber(account.getAccountNumber());
+        response.setAccountType(account.getAccountType());
+        response.setBalance(account.getBalance());
+
+        List<TransactionResponse> transactions =
+                transactionRepository
+                        .findTop5ByAccountIdOrderByCreatedAtDesc(
+                                account.getId()
+                        )
+                        .stream()
+                        .map(tx -> {
+
+                            TransactionResponse dto =
+                                    new TransactionResponse();
+
+                            dto.setTransactionId(tx.getId());
+                            dto.setReferenceNumber(
+                                    tx.getReferenceNumber()
+                            );
+                            dto.setTransactionType(
+                                    tx.getTransactionType().name()
+                            );
+                            dto.setStatus(
+                                    tx.getStatus().name()
+                            );
+                            dto.setAmount(tx.getAmount());
+                            dto.setDescription(tx.getDescription());
+                            dto.setCreatedAt(tx.getCreatedAt());
+
+                            return dto;
+                        })
+                        .toList();
+
+        response.setRecentTransactions(transactions);
+
+        return response;
     }
 
     @Override
-    public BigDecimal getBalance(Long id) {
-        Account account = accountRepository.findById(id).orElse(null);
+    public Account getAccount(Long id, User user) {
 
-        if (account == null) {
-            return null;
-        }
+        return accountRepository
+                .findByIdAndUser(id, user)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found"));
+    }
+
+    @Override
+    public java.math.BigDecimal getBalance(Long id, User user) {
+
+        Account account = accountRepository
+                .findByIdAndUser(id, user)
+                .orElseThrow(() ->
+                        new RuntimeException("Account not found"));
 
         return account.getBalance();
     }

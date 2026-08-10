@@ -34,6 +34,15 @@ public class User {
     @Column(nullable = false)
     private String status = "ACTIVE";
 
+    @Column(name = "banking_pin_hash")
+private String bankingPinHash;
+
+@Column(name = "pin_failed_attempts", nullable = false)
+private Integer pinFailedAttempts = 0;
+
+@Column(name = "pin_locked_until")
+private LocalDateTime pinLockedUntil;
+
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,
@@ -133,4 +142,28 @@ public class User {
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
+
+    public String getBankingPinHash() {
+    return bankingPinHash;
+}
+
+public void setBankingPinHash(String bankingPinHash) {
+    this.bankingPinHash = bankingPinHash;
+}
+
+public Integer getPinFailedAttempts() {
+    return pinFailedAttempts;
+}
+
+public void setPinFailedAttempts(Integer pinFailedAttempts) {
+    this.pinFailedAttempts = pinFailedAttempts;
+}
+
+public LocalDateTime getPinLockedUntil() {
+    return pinLockedUntil;
+}
+
+public void setPinLockedUntil(LocalDateTime pinLockedUntil) {
+    this.pinLockedUntil = pinLockedUntil;
+}
 }

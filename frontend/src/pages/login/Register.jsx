@@ -10,20 +10,30 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showBankingPin, setShowBankingPin] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    bankingPin: "",
   });
 
   const handleChange = (e) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleBankingPinChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+
+    setForm((prev) => ({
+      ...prev,
+      bankingPin: value,
     }));
   };
 
@@ -40,6 +50,11 @@ export default function Register() {
       return;
     }
 
+    if (!/^\d{4}$/.test(form.bankingPin)) {
+      toast.error("Banking PIN must be exactly 4 digits.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -50,7 +65,14 @@ export default function Register() {
         phone: "9876543210",
         accountType: "SAVINGS",
         initialBalance: 2000,
+        bankingPin: form.bankingPin,
       };
+
+      console.log("Registration payload:", {
+        ...payload,
+        password: "[HIDDEN]",
+        bankingPin: "[HIDDEN]",
+      });
 
       await authService.register(payload);
 
@@ -58,7 +80,7 @@ export default function Register() {
 
       navigate("/login");
     } catch (err) {
-      console.error(err);
+      console.error("Registration failed:", err);
 
       toast.error(
         err.response?.data?.message ||
@@ -79,9 +101,9 @@ export default function Register() {
       <div className="absolute -right-40 bottom-0 h-96 w-96 rounded-full bg-fuchsia-700/20 blur-[120px]" />
 
       <motion.div
-        initial={{ opacity: 0, scale: .95 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: .5 }}
+        transition={{ duration: 0.5 }}
         className="relative w-full max-w-lg"
       >
 
@@ -90,9 +112,7 @@ export default function Register() {
           <div className="mb-10 text-center">
 
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-3xl text-white">
-
               <FaUserPlus />
-
             </div>
 
             <h1 className="text-4xl font-black text-white">
@@ -191,6 +211,42 @@ export default function Register() {
               </button>
 
             </div>
+
+            <div className="relative">
+
+              <input
+                type={showBankingPin ? "text" : "password"}
+                name="bankingPin"
+                placeholder="4-Digit Banking PIN"
+                value={form.bankingPin}
+                onChange={handleBankingPinChange}
+                inputMode="numeric"
+                maxLength={4}
+                pattern="[0-9]{4}"
+                autoComplete="new-password"
+                required
+                className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] px-5 py-4 pr-14 text-white outline-none transition focus:border-violet-500"
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowBankingPin(!showBankingPin)
+                }
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+              >
+                {showBankingPin ? (
+                  <FaEyeSlash />
+                ) : (
+                  <FaEye />
+                )}
+              </button>
+
+            </div>
+
+            <p className="text-xs text-zinc-500">
+              Banking PIN must contain exactly 4 digits.
+            </p>
 
             <button
               type="submit"

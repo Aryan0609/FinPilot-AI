@@ -11,6 +11,7 @@ public interface TransactionService {
             Long accountId,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail
     );
 
@@ -18,6 +19,7 @@ public interface TransactionService {
             Long accountId,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail
     );
 
@@ -25,6 +27,7 @@ public interface TransactionService {
             String toAccountNumber,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail
     );
 

@@ -8,6 +8,11 @@ import com.finpilot.banking.entity.Transaction;
 import com.finpilot.banking.entity.TransactionStatus;
 import com.finpilot.banking.entity.TransactionType;
 import com.finpilot.banking.entity.User;
+import com.finpilot.banking.exception.BadRequestException;
+import com.finpilot.banking.exception.ForbiddenException;
+import com.finpilot.banking.exception.InsufficientBalanceException;
+import com.finpilot.banking.exception.ResourceNotFoundException;
+import com.finpilot.banking.exception.TransactionBlockedException;
 import com.finpilot.banking.repository.AccountRepository;
 import com.finpilot.banking.repository.TransactionRepository;
 import com.finpilot.banking.repository.UserRepository;
@@ -35,6 +40,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private AIService aiService;
 
+    @Autowired
+    private BankingPinService bankingPinService;
+
 
     // -------------------------------------------------------
     // Deposit
@@ -46,16 +54,19 @@ public class TransactionServiceImpl implements TransactionService {
             Long accountId,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail) {
 
         validateAmount(amount);
 
         User user = getUser(userEmail);
 
+        bankingPinService.verifyPin(userEmail, bankingPin);
+
         Account account = accountRepository
                 .findByIdForUpdate(accountId)
                 .orElseThrow(() ->
-                        new RuntimeException("Account not found"));
+                        new ResourceNotFoundException("Account not found"));
 
         verifyOwnership(account, user);
 
@@ -94,21 +105,24 @@ public class TransactionServiceImpl implements TransactionService {
             Long accountId,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail) {
 
         validateAmount(amount);
 
         User user = getUser(userEmail);
 
+        bankingPinService.verifyPin(userEmail, bankingPin);
+
         Account account = accountRepository
                 .findByIdForUpdate(accountId)
                 .orElseThrow(() ->
-                        new RuntimeException("Account not found"));
+                        new ResourceNotFoundException("Account not found"));
 
         verifyOwnership(account, user);
 
         if (account.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient Balance");
+            throw new InsufficientBalanceException("Insufficient balance");
         }
 
         account.setBalance(
@@ -146,15 +160,18 @@ public class TransactionServiceImpl implements TransactionService {
             String toAccountNumber,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail) {
 
         validateAmount(amount);
 
         if (toAccountNumber == null || toAccountNumber.isBlank()) {
-            throw new RuntimeException("Receiver account number is required");
+            throw new BadRequestException("Receiver account number is required");
         }
 
         User user = getUser(userEmail);
+
+        bankingPinService.verifyPin(userEmail, bankingPin);
 
         // -------------------------------------------------------
         // SECURITY:
@@ -165,17 +182,17 @@ public class TransactionServiceImpl implements TransactionService {
         Account sender = accountRepository
                 .findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Sender account not found")
+                        new ResourceNotFoundException("Sender account not found")
                 );
 
         Account receiver = accountRepository
                 .findByAccountNumber(toAccountNumber.trim())
                 .orElseThrow(() ->
-                        new RuntimeException("Receiver account not found")
+                        new ResourceNotFoundException("Receiver account not found")
                 );
 
         if (sender.getId().equals(receiver.getId())) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Cannot transfer to same account"
             );
         }
@@ -191,13 +208,13 @@ public class TransactionServiceImpl implements TransactionService {
         Account firstLocked = accountRepository
                 .findByIdForUpdate(firstId)
                 .orElseThrow(() ->
-                        new RuntimeException("Account not found")
+                        new ResourceNotFoundException("Account not found")
                 );
 
         Account secondLocked = accountRepository
                 .findByIdForUpdate(secondId)
                 .orElseThrow(() ->
-                        new RuntimeException("Account not found")
+                        new ResourceNotFoundException("Account not found")
                 );
 
         if (sender.getId().equals(firstId)) {
@@ -212,8 +229,8 @@ public class TransactionServiceImpl implements TransactionService {
         verifyOwnership(sender, user);
 
         if (sender.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException(
-                    "Insufficient Balance"
+            throw new InsufficientBalanceException(
+                    "Insufficient balance"
             );
         }
 
@@ -270,11 +287,10 @@ public class TransactionServiceImpl implements TransactionService {
         );
 
         if (prediction.getRisk_score() >= 80) {
-            throw new RuntimeException(
-                    "Transaction Blocked\n\n"
-                            + "Risk Level : "
+            throw new TransactionBlockedException(
+                    "Transaction blocked. Risk Level: "
                             + prediction.getRisk_level()
-                            + "\n\nReasons : "
+                            + ". Reasons: "
                             + prediction.getReasons()
             );
         }
@@ -367,7 +383,7 @@ public class TransactionServiceImpl implements TransactionService {
         Account account = accountRepository
                 .findById(accountId)
                 .orElseThrow(() ->
-                        new RuntimeException("Account not found"));
+                        new ResourceNotFoundException("Account not found"));
 
         /*
          * Prevent users from viewing another user's
@@ -407,7 +423,7 @@ public class TransactionServiceImpl implements TransactionService {
                 || !account.getUser().getId()
                         .equals(user.getId())) {
 
-            throw new RuntimeException(
+            throw new ForbiddenException(
                     "You are not authorized to access this account"
             );
         }
@@ -419,7 +435,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (amount == null
                 || amount.compareTo(BigDecimal.ZERO) <= 0) {
 
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Amount must be greater than zero"
             );
         }

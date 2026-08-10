@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 
 import Layout from "../../layouts/Layout";
+import { getGreeting, formatDateTime } from "../../utils/formatters";
 
 import authService from "../../services/authService";
 import {
@@ -184,19 +185,7 @@ export default function Dashboard() {
       return "—";
     }
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-
-    return date.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTime(value);
   };
 
   const getStatus = (transaction) => {
@@ -298,7 +287,7 @@ export default function Dashboard() {
             </p>
 
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              Good evening, {firstName}
+              {getGreeting()}, {firstName}
             </h1>
 
             <p className="mt-2 text-sm text-zinc-500">
