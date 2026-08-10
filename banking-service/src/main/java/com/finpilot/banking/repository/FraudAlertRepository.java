@@ -1,0 +1,16 @@
+package com.finpilot.banking.repository;
+
+import com.finpilot.banking.entity.FraudAlert;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface FraudAlertRepository
+        extends JpaRepository<FraudAlert, Long> {
+
+    List<FraudAlert> findAllByOrderByCreatedAtDesc();
+
+    List<FraudAlert> findByStatusOrderByCreatedAtDesc(
+            String status
+    );
+}

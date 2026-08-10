@@ -4,6 +4,7 @@ import com.finpilot.banking.dto.PredictionRequest;
 import com.finpilot.banking.dto.PredictionResponse;
 import com.finpilot.banking.dto.TransactionResponse;
 import com.finpilot.banking.entity.Account;
+import com.finpilot.banking.entity.FraudAlert;
 import com.finpilot.banking.entity.Transaction;
 import com.finpilot.banking.entity.TransactionStatus;
 import com.finpilot.banking.entity.TransactionType;
@@ -14,6 +15,7 @@ import com.finpilot.banking.exception.InsufficientBalanceException;
 import com.finpilot.banking.exception.ResourceNotFoundException;
 import com.finpilot.banking.exception.TransactionBlockedException;
 import com.finpilot.banking.repository.AccountRepository;
+import com.finpilot.banking.repository.FraudAlertRepository;
 import com.finpilot.banking.repository.TransactionRepository;
 import com.finpilot.banking.repository.UserRepository;
 
@@ -30,6 +32,12 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private FraudAlertRepository fraudAlertRepository;
+
+    @Autowired
+    private FraudAlertService fraudAlertService;
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -268,6 +276,50 @@ public class TransactionServiceImpl implements TransactionService {
         PredictionResponse prediction =
                 aiService.predict(request);
 
+        // =====================================================
+        // SAVE AI FRAUD ALERT
+        // =====================================================
+
+        FraudAlert fraudAlert = new FraudAlert();
+
+        fraudAlert.setUserId(user.getId());
+        fraudAlert.setAccountId(sender.getId());
+
+        fraudAlert.setPrediction(
+                prediction.getPrediction()
+        );
+
+        fraudAlert.setFraudProbability(
+                BigDecimal.valueOf(
+                        prediction.getFraud_probability()
+                )
+        );
+
+        fraudAlert.setRiskScore(
+                BigDecimal.valueOf(
+                        prediction.getRisk_score()
+                )
+        );
+
+        fraudAlert.setRiskLevel(
+                prediction.getRisk_level()
+        );
+
+        fraudAlert.setReasons(
+                prediction.getReasons() == null
+                        ? null
+                        : String.join(
+                                ", ",
+                                prediction.getReasons()
+                        )
+        );
+
+        fraudAlert.setStatus(
+                prediction.getRisk_score() >= 70
+                        ? "BLOCKED"
+                        : "OPEN"
+        );
+
         System.out.println("========== AI RESULT ==========");
         System.out.println(
                 "Prediction : "
@@ -286,7 +338,10 @@ public class TransactionServiceImpl implements TransactionService {
                         + prediction.getRisk_level()
         );
 
-        if (prediction.getRisk_score() >= 80) {
+        if (prediction.getRisk_score() >= 70) {
+
+            fraudAlertService.save(fraudAlert);
+
             throw new TransactionBlockedException(
                     "Transaction blocked. Risk Level: "
                             + prediction.getRisk_level()
@@ -364,6 +419,11 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRepository.saveAll(
                 List.of(debit, credit)
         );
+
+        // Link the fraud alert to the actual TRANSFER_OUT transaction.
+        fraudAlert.setTransactionId(debit.getId());
+
+        fraudAlertRepository.save(fraudAlert);
 
         return map(debit);
     }
