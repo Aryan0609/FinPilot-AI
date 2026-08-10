@@ -40,6 +40,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private AIService aiService;
 
+    @Autowired
+    private BankingPinService bankingPinService;
+
 
     // -------------------------------------------------------
     // Deposit
@@ -51,11 +54,14 @@ public class TransactionServiceImpl implements TransactionService {
             Long accountId,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail) {
 
         validateAmount(amount);
 
         User user = getUser(userEmail);
+
+        bankingPinService.verifyPin(userEmail, bankingPin);
 
         Account account = accountRepository
                 .findByIdForUpdate(accountId)
@@ -99,11 +105,14 @@ public class TransactionServiceImpl implements TransactionService {
             Long accountId,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail) {
 
         validateAmount(amount);
 
         User user = getUser(userEmail);
+
+        bankingPinService.verifyPin(userEmail, bankingPin);
 
         Account account = accountRepository
                 .findByIdForUpdate(accountId)
@@ -151,6 +160,7 @@ public class TransactionServiceImpl implements TransactionService {
             String toAccountNumber,
             BigDecimal amount,
             String description,
+            String bankingPin,
             String userEmail) {
 
         validateAmount(amount);
@@ -160,6 +170,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         User user = getUser(userEmail);
+
+        bankingPinService.verifyPin(userEmail, bankingPin);
 
         // -------------------------------------------------------
         // SECURITY:

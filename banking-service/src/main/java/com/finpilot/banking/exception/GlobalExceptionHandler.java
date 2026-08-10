@@ -56,6 +56,26 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidBankingPinException.class)
+    public ResponseEntity<?> handleInvalidBankingPin(
+            InvalidBankingPinException ex) {
+
+        return build(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(BankingPinLockedException.class)
+    public ResponseEntity<?> handleBankingPinLocked(
+            BankingPinLockedException ex) {
+
+        return build(
+                HttpStatus.FORBIDDEN,
+                ex.getMessage()
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
 

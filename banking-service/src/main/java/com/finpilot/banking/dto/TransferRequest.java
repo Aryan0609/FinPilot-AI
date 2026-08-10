@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 
 public class TransferRequest {
 
+    private String bankingPin;
+
     private String toAccountNumber;
     private BigDecimal amount;
     private String description;
@@ -33,5 +35,13 @@ public class TransferRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getBankingPin() {
+        return bankingPin;
+    }
+
+    public void setBankingPin(String bankingPin) {
+        this.bankingPin = bankingPin;
     }
 }

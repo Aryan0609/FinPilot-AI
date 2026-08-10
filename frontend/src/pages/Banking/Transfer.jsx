@@ -19,6 +19,7 @@ export default function Transfer() {
   const [receiverAccountNumber, setReceiverAccountNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [bankingPin, setBankingPin] = useState("");
   const [loading, setLoading] = useState(false);
 
   const quickAmounts = [500, 1000, 2000, 5000];
@@ -28,6 +29,11 @@ export default function Transfer() {
 
     if (!receiverAccountNumber || !amount) {
       toast.error("Fill all required fields.");
+      return;
+    }
+
+    if (!/^\d{4}$/.test(bankingPin)) {
+      toast.error("Enter your 4-digit banking PIN.");
       return;
     }
 
@@ -49,6 +55,7 @@ export default function Transfer() {
         toAccountNumber: accountNumber,
         amount: Number(amount),
         description,
+        bankingPin,
       });
 
       toast.success("Transfer Successful");
@@ -56,6 +63,7 @@ export default function Transfer() {
       setReceiverAccountNumber("");
       setAmount("");
       setDescription("");
+      setBankingPin("");
 
       setTimeout(() => navigate("/wallet"), 1200);
 
@@ -192,6 +200,36 @@ export default function Transfer() {
               placeholder="Optional description..."
               className="w-full resize-none rounded-2xl border border-zinc-700 bg-[#0d0d0d] p-5 text-white outline-none transition focus:border-violet-500"
             />
+
+          </div>
+
+          {/* Banking PIN */}
+
+          <div>
+
+            <label className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-zinc-500">
+              Banking PIN
+            </label>
+
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={bankingPin}
+              onChange={(e) =>
+                setBankingPin(
+                  e.target.value.replace(/\D/g, "").slice(0, 4)
+                )
+              }
+              placeholder="Enter 4-digit PIN"
+              autoComplete="off"
+              className="w-full rounded-2xl border border-zinc-700 bg-[#0d0d0d] py-4 px-5 text-xl tracking-[0.5em] text-white outline-none transition focus:border-violet-500"
+              required
+            />
+
+            <p className="mt-2 text-xs text-zinc-500">
+              Your PIN is required to authorize this transaction.
+            </p>
 
           </div>
 

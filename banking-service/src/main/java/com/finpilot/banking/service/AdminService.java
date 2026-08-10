@@ -211,7 +211,7 @@ public List<Map<String, Object>> getMutualFunds() {
 
             })
             .toList();
-    }
+}
                 // =========================================================
 // MUTUAL FUND INVESTMENTS / TRANSACTIONS
 // =========================================================
