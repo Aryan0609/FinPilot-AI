@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout";
+import { formatDateTime } from "../../utils/formatters";
 import { getTransactions } from "../../services/adminService";
 
 export default function Transactions() {
@@ -123,15 +124,7 @@ export default function Transactions() {
 
                   <td className="p-5 text-gray-400">
 
-                    {new Date(tx.transactionDate).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {formatDateTime(tx.transactionDate)}
 
                   </td>
 

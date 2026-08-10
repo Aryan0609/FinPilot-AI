@@ -2,6 +2,7 @@ package com.finpilot.banking.service;
 
 import com.finpilot.banking.dto.PredictionRequest;
 import com.finpilot.banking.dto.PredictionResponse;
+import com.finpilot.banking.exception.AIServiceException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -32,14 +34,36 @@ public class AIService {
         HttpEntity<PredictionRequest> entity =
                 new HttpEntity<>(request, headers);
 
-        ResponseEntity<PredictionResponse> response =
-                restTemplate.exchange(
-                        aiUrl,
-                        HttpMethod.POST,
-                        entity,
-                        PredictionResponse.class
-                );
+        try {
 
-        return response.getBody();
+            ResponseEntity<PredictionResponse> response =
+                    restTemplate.exchange(
+                            aiUrl,
+                            HttpMethod.POST,
+                            entity,
+                            PredictionResponse.class
+                    );
+
+            PredictionResponse body = response.getBody();
+
+            if (body == null) {
+                throw new AIServiceException(
+                        "AI service returned an empty response"
+                );
+            }
+
+            return body;
+
+        } catch (AIServiceException ex) {
+
+            throw ex;
+
+        } catch (RestClientException ex) {
+
+            throw new AIServiceException(
+                    "Fraud detection service is currently unavailable",
+                    ex
+            );
+        }
     }
 }

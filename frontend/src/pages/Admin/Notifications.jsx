@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout";
+import { formatDateTime } from "../../utils/formatters";
 import { getNotifications } from "../../services/adminService";
 
 export default function Notifications() {
@@ -88,7 +89,7 @@ export default function Notifications() {
 
                 <p className="mt-2 text-sm text-gray-400">
 
-                  {new Date(notification.time).toLocaleString()}
+                  {formatDateTime(notification.time)}
 
                 </p>
 

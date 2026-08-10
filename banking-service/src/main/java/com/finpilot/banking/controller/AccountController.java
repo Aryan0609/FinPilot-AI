@@ -26,32 +26,43 @@ public class AccountController {
         this.userRepository = userRepository;
     }
 
-    @PostMapping
-    public Account createAccount(@RequestBody Account account) {
-        return accountService.createAccount(account);
-    }
-
     @GetMapping("/{id}")
-    public Account getAccount(@PathVariable Long id) {
-        return accountService.getAccount(id);
+    public Account getAccount(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        User user = getAuthenticatedUser(authentication);
+
+        return accountService.getAccount(id, user);
     }
 
     @GetMapping("/{id}/balance")
-    public BigDecimal getBalance(@PathVariable Long id) {
-        return accountService.getBalance(id);
+    public BigDecimal getBalance(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        User user = getAuthenticatedUser(authentication);
+
+        return accountService.getBalance(id, user);
     }
 
     @GetMapping("/dashboard")
     public DashboardResponse dashboard(
             Authentication authentication) {
 
+        User user = getAuthenticatedUser(authentication);
+
+        return accountService.getDashboard(user);
+    }
+
+    private User getAuthenticatedUser(
+            Authentication authentication) {
+
         String email = authentication.getName();
 
-        User user = userRepository
+        return userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("User not found"));
-
-        return accountService.getDashboard(user);
     }
 }

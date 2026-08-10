@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 
 import Layout from "../../layouts/Layout";
+import { getGreeting, formatDateTime } from "../../utils/formatters";
 
 import authService from "../../services/authService";
 import {
@@ -66,20 +67,6 @@ export default function Dashboard() {
 
   const firstName =
     user?.name?.trim()?.split(" ")[0] || "there";
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-
-    if (hour < 12) {
-      return "Good morning";
-    }
-
-    if (hour < 17) {
-      return "Good afternoon";
-    }
-
-    return "Good evening";
-  };
 
   const formatMoney = (value) => {
     const amount = Number(value || 0);
@@ -198,21 +185,7 @@ export default function Dashboard() {
       return "—";
     }
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-
-    return date.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    return formatDateTime(value);
   };
 
   const getStatus = (transaction) => {

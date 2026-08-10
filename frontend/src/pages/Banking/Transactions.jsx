@@ -10,6 +10,7 @@ import {
 import { toast } from "react-hot-toast";
 
 import Layout from "../../layouts/Layout";
+import { formatDateTime } from "../../utils/formatters";
 import { getTransactions } from "../../services/bankingService";
 import authService from "../../services/authService";
 
@@ -38,7 +39,11 @@ export default function Transactions() {
       setTransactions(response.data || []);
     } catch (error) {
       console.error("Transaction loading failed:", error);
-      toast.error("Unable to load transactions.");
+      toast.error(
+        error.userMessage ||
+        error.response?.data?.message ||
+        "Unable to load transactions."
+      );
     } finally {
       setLoading(false);
     }
@@ -83,21 +88,7 @@ export default function Transactions() {
 
     if (!value) return "—";
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-
-    return date.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    return formatDateTime(value);
   };
 
   const formatMoney = (value) => {
