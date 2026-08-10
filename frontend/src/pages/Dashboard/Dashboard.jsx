@@ -23,6 +23,7 @@ import authService from "../../services/authService";
 import {
   getAccount,
   getTransactions,
+  getPortfolio,
 } from "../../services/bankingService";
 
 import fdService from "../../services/fdService";
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [account, setAccount] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [fds, setFds] = useState([]);
+  const [mutualFundPortfolio, setMutualFundPortfolio] = useState([]);
 
   useEffect(() => {
     loadDashboard();
@@ -53,14 +55,21 @@ export default function Dashboard() {
         return;
       }
 
-      const [accountResponse, transactionResponse] =
+      const [accountResponse, transactionResponse, portfolioResponse] =
         await Promise.all([
           getAccount(currentUser.accountId),
           getTransactions(currentUser.accountId),
+          getPortfolio(currentUser.accountId),
         ]);
 
       setAccount(accountResponse.data);
       setTransactions(transactionResponse.data || []);
+
+      setMutualFundPortfolio(
+        Array.isArray(portfolioResponse.data)
+          ? portfolioResponse.data
+          : []
+      );
 
       if (currentUser?.userId) {
         try {
@@ -318,17 +327,32 @@ export default function Dashboard() {
     fdTotalInvested;
 
   // =========================================================
-  // MUTUAL FUND PLACEHOLDER
-  //
-  // We are deliberately not inventing portfolio numbers.
-  // Backend portfolio data will be connected separately.
+  // MUTUAL FUND PORTFOLIO
   // =========================================================
 
-  const mutualFundInvested = 0;
-  const mutualFundCurrentValue = 0;
-  const mutualFundGain =
-    mutualFundCurrentValue -
-    mutualFundInvested;
+  const mutualFundInvested = useMemo(() => {
+    return mutualFundPortfolio.reduce(
+      (sum, investment) =>
+        sum + Number(investment?.investedAmount || 0),
+      0
+    );
+  }, [mutualFundPortfolio]);
+
+  const mutualFundCurrentValue = useMemo(() => {
+    return mutualFundPortfolio.reduce(
+      (sum, investment) =>
+        sum + Number(investment?.currentValue || 0),
+      0
+    );
+  }, [mutualFundPortfolio]);
+
+  const mutualFundGain = useMemo(() => {
+    return mutualFundPortfolio.reduce(
+      (sum, investment) =>
+        sum + Number(investment?.profitLoss || 0),
+      0
+    );
+  }, [mutualFundPortfolio]);
 
   // =========================================================
   // CATEGORY ICON
