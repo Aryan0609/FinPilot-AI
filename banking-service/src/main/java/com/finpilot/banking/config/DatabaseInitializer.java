@@ -17,6 +17,13 @@ public class DatabaseInitializer {
     @PostConstruct
     public void initialize() {
 
+        // Registration and authorization require these roles to exist.
+        jdbcTemplate.update("""
+            INSERT INTO roles (role_name)
+            VALUES ('ROLE_USER'), ('ROLE_ADMIN')
+            ON CONFLICT (role_name) DO NOTHING
+            """);
+
         String sql = """
             INSERT INTO user_roles (user_id, role_id)
             SELECT
